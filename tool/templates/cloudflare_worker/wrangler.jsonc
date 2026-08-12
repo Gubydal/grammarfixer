@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "app-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "ENVIRONMENT": "development"
+  }
+  // Secrets are set with `npx wrangler secret put AUTH_TOKEN` and never
+  // committed. After changing this file, run `npm run types` so
+  // worker-configuration.d.ts stays in sync.
+}

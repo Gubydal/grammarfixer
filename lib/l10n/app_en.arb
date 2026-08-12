@@ -1,0 +1,151 @@
+{
+  "@@locale": "en",
+
+  "appName": "App Starter",
+  "home": "Home",
+  "profile": "Profile",
+  "settings": "Settings",
+  "upgrade": "Upgrade",
+  "upgradeToPro": "Upgrade to Pro",
+  "goPro": "Go Pro",
+  "youArePro": "You are Pro",
+  "freePlan": "Free Plan",
+  "proPlan": "Pro Plan",
+  "currentPlan": "Current plan",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "close": "Close",
+  "or": "or",
+  "loading": "Loading…",
+  "loadingOffers": "Loading offers…",
+
+  "signInWithEmail": "Sign In with Email",
+  "continueWithGoogle": "Continue with Google",
+  "email": "Email",
+  "password": "Password",
+  "forgotPassword": "Forgot Password?",
+  "forgotPasswordTitle": "Forgot Password?",
+  "enterEmail": "Enter email…",
+  "reset": "Reset",
+  "dontHaveAccount": "Don't have an account?",
+  "registerNow": "Register now",
+  "signUpWithEmail": "Sign Up with Email",
+  "createAccountTitle": "Create your account",
+  "createAccountSubtitle": "Start using {app} in seconds.",
+  "@createAccountSubtitle": {
+    "placeholders": {
+      "app": { "type": "String" }
+    }
+  },
+  "name": "Name",
+  "confirmPassword": "Confirm password",
+  "alreadyHaveAccount": "Already have an account?",
+  "loginNow": "Login now",
+  "loginTagline": "Your account, your data, your app.",
+  "pleaseCompleteFields": "Please enter both email & password.",
+  "completeAllFields": "Please complete all fields!",
+  "passwordsDoNotMatch": "Passwords do not match!",
+  "passwordResetEmailSent": "Password reset email sent! Check your inbox",
+  "resetPasswordTitle": "Reset Password",
+  "chooseNewPassword": "Choose a new password",
+  "newPassword": "New password",
+  "confirmNewPassword": "Confirm new password",
+  "updatePassword": "Update Password",
+  "passwordUpdated": "Password updated. You can now sign in.",
+  "fillBothPasswordFields": "Please fill in both password fields.",
+  "couldNotOpenLink": "Could not open the link.",
+
+  "homeGreeting": "Welcome to {app}",
+  "@homeGreeting": {
+    "placeholders": {
+      "app": { "type": "String" }
+    }
+  },
+  "homeReadyTitle": "Ready to build",
+  "homeReadyMessage": "This shell is ready for your app's main feature. Auth, Supabase, ads, and subscriptions are already wired up.",
+  "homeFeatureTitle": "Your main feature goes here",
+  "homeFeatureMessage": "Replace this section with your app's primary feature. The design system, state management, and services are ready.",
+  "homeSignedInAs": "Signed in as {email}",
+  "@homeSignedInAs": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "homeGetStarted": "Get started",
+  "homeStepOne": "Add your feature screens under lib/features.",
+  "homeStepTwo": "Set your plan and benefit copy in the paywall content.",
+  "homeStepThree": "Fill dart_defines with your app's real service keys.",
+
+  "proCardFreeMessage": "Remove ads and unlock premium features.",
+  "proCardProMessage": "Ads are removed and premium features are unlocked.",
+  "proCardCta": "Upgrade",
+
+  "paywallTitle": "Unlock {app} Pro",
+  "@paywallTitle": {
+    "placeholders": {
+      "app": { "type": "String" }
+    }
+  },
+  "paywallSubtitle": "Get the most out of {app}.",
+  "@paywallSubtitle": {
+    "placeholders": {
+      "app": { "type": "String" }
+    }
+  },
+  "benefitNoAds": "No ads",
+  "benefitPremiumFeatures": "Premium features",
+  "benefitFutureFeatures": "Future feature access",
+  "benefitPrioritySupport": "Priority support",
+  "monthly": "Monthly",
+  "annual": "Annual",
+  "bestValue": "Best value",
+  "perMonth": "/month",
+  "perYear": "/year",
+  "subscribe": "Subscribe",
+  "startPro": "Start Pro",
+  "restorePurchases": "Restore Purchases",
+  "purchasesRestored": "Purchases restored.",
+  "noUpgradeAvailable": "No upgrade available",
+  "noUpgradeMessage": "Configure an offering in RevenueCat to enable Pro.",
+  "autoRenewNote": "Auto-renewable. Switch plans or cancel anytime.",
+  "terms": "Terms",
+  "privacy": "Privacy",
+  "termsOfUse": "Terms of Use",
+  "privacyPolicy": "Privacy Policy",
+  "proActiveTitle": "You're Pro",
+  "proActiveMessage": "Ads are off and premium features are unlocked. Thank you for your support!",
+
+  "sendFeedback": "Send Feedback",
+  "feedbackPrompt": "How is {app} working for you?",
+  "@feedbackPrompt": {
+    "placeholders": {
+      "app": { "type": "String" }
+    }
+  },
+  "feedbackHint": "Share what you like or what could improve…",
+  "feedbackEmpty": "Please write a short message.",
+  "feedbackSending": "Sending feedback…",
+  "feedbackThanks": "Thank you for your feedback!",
+  "feedbackError": "Could not send feedback. Please try again.",
+
+  "rateOnGooglePlay": "Rate on Google Play",
+  "deleteAccountOnWeb": "Delete account on web",
+  "logout": "Logout",
+  "logoutTitle": "Logout?",
+  "deleteAccount": "Delete Account",
+  "deleteAccountTitle": "Delete Account?",
+  "deleteAccountMessage": "This permanently deletes your account and data. This cannot be undone.",
+  "deleteAccountWebMessage": "You can also delete your account on the web at {url}.",
+  "@deleteAccountWebMessage": {
+    "placeholders": {
+      "url": { "type": "String" }
+    }
+  },
+
+  "profileDataNote": "Your profile data is stored in your app's Supabase schema with row-level security.",
+  "profileManage": "Manage",
+  "errorSomethingWentWrong": "Something went wrong.",
+
+  "adBannerLabel": "Advertisement"
+}
