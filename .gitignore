@@ -53,5 +53,3 @@ android/local.properties
 **/node_modules/
 .dev.vars
 .wrangler/
-artifacts/*.apk
-artifacts/*.aab
