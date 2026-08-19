@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -27,6 +28,31 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  static const _settingsChannel = MethodChannel('com.mogate.grammarfix/android_settings');
+  Map<String, dynamic>? _keyboardStatus;
+  Map<String, dynamic>? _spellCheckerStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshNativeStatus();
+  }
+
+  Future<void> _refreshNativeStatus() async {
+    try {
+      final kbStatus = await _settingsChannel.invokeMapMethod<String, dynamic>('getKeyboardStatus');
+      final scStatus = await _settingsChannel.invokeMapMethod<String, dynamic>('getSpellCheckerStatus');
+      if (mounted) {
+        setState(() {
+          _keyboardStatus = kbStatus;
+          _spellCheckerStatus = scStatus;
+        });
+      }
+    } catch (_) {
+      // Native bridge not available (e.g. running on iOS or test)
+    }
+  }
+
   void _showDialectPicker(BuildContext context, PersonalStyleRepository personalStyleRepo) {
     final currentDialect = personalStyleRepo.profile.dialect;
     showModalBottomSheet<void>(
@@ -144,6 +170,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showKeyboardSetupDialog(BuildContext context) {
+    final isEnabled = _keyboardStatus?['enabled'] == true;
+    final isActive = _keyboardStatus?['active'] == true;
+
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -154,19 +183,30 @@ class _SettingsPageState extends State<SettingsPage> {
             Text('Grammar Keyboard'),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('To use GrammarFix while typing in any app:'),
-            SizedBox(height: 12),
-            Text('1. Tap "Open Settings" below.'),
-            SizedBox(height: 6),
-            Text('2. Enable "GrammarFix Keyboard".'),
-            SizedBox(height: 6),
-            Text('3. Switch your input method when typing.'),
-            SizedBox(height: 12),
-            Text(
+            if (isActive) ...[
+              const Text('✓ GrammarFix Keyboard is your active keyboard!',
+                style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary)),
+              const SizedBox(height: 12),
+              const Text('You can switch input methods when typing using the keyboard icon in your navigation bar.'),
+            ] else if (isEnabled) ...[
+              const Text('GrammarFix Keyboard is enabled but not active.'),
+              const SizedBox(height: 12),
+              const Text('Tap "Switch Now" to make it your active keyboard.'),
+            ] else ...[
+              const Text('To use GrammarFix while typing in any app:'),
+              const SizedBox(height: 12),
+              const Text('1. Tap "Open Settings" below.'),
+              const SizedBox(height: 6),
+              const Text('2. Enable "GrammarFix Keyboard".'),
+              const SizedBox(height: 6),
+              const Text('3. Switch your input method when typing.'),
+            ],
+            const SizedBox(height: 12),
+            const Text(
               'Privacy Guarantee: Password fields and PINs automatically disable all correction suggestions. No keystroke data leaves your phone.',
               style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
             ),
@@ -177,23 +217,32 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                final uri = Uri.parse('android.settings.INPUT_METHOD_SETTINGS');
-                final launched = await launchUrl(uri);
-                if (!launched && context.mounted) {
-                  _showManualSettingsGuide(context, 'Keyboard & Input Methods');
+          if (isEnabled && !isActive)
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  await _settingsChannel.invokeMethod<bool>('showInputMethodPicker');
+                } catch (_) {}
+                await _refreshNativeStatus();
+              },
+              child: const Text('Switch Now'),
+            )
+          else if (!isEnabled)
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  await _settingsChannel.invokeMethod<bool>('openInputMethodSettings');
+                } catch (_) {
+                  if (context.mounted) {
+                    _showManualSettingsGuide(context, 'Keyboard & Input Methods');
+                  }
                 }
-              } catch (_) {
-                if (context.mounted) {
-                  _showManualSettingsGuide(context, 'Keyboard & Input Methods');
-                }
-              }
-            },
-            child: const Text('Open Settings'),
-          ),
+                await _refreshNativeStatus();
+              },
+              child: const Text('Open Settings'),
+            ),
         ],
       ),
     );
@@ -298,35 +347,76 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSectionHeader('WRITING EVERYWHERE'),
             _buildCard([
               ListTile(
-                leading: const AppIcon(AppIcons.tick, size: 20),
+                leading: AppIcon(
+                  _keyboardStatus?['active'] == true ? AppIcons.tickCircle : AppIcons.edit,
+                  size: 20,
+                  color: _keyboardStatus?['active'] == true ? AppColors.primary : null,
+                ),
+                title: const Text('Grammar Keyboard'),
+                subtitle: Text(
+                  _keyboardStatus?['active'] == true
+                      ? 'Active ✓'
+                      : _keyboardStatus?['enabled'] == true
+                          ? 'Enabled · Tap to switch'
+                          : 'Not enabled · Real-time suggestions while typing',
+                ),
+                trailing: _keyboardStatus?['active'] == true
+                    ? FilledButton.tonal(
+                        onPressed: () async {
+                          try {
+                            await _settingsChannel.invokeMethod<bool>('showInputMethodPicker');
+                          } catch (_) {}
+                          await _refreshNativeStatus();
+                        },
+                        child: const Text('Choose'),
+                      )
+                    : _keyboardStatus?['enabled'] == true
+                        ? FilledButton.tonal(
+                            onPressed: () async {
+                              try {
+                                await _settingsChannel.invokeMethod<bool>('showInputMethodPicker');
+                              } catch (_) {}
+                              await _refreshNativeStatus();
+                            },
+                            child: const Text('Switch'),
+                          )
+                        : FilledButton.tonal(
+                            onPressed: () => _showKeyboardSetupDialog(context),
+                            child: const Text('Enable'),
+                          ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: AppIcon(
+                  _spellCheckerStatus?['available'] == true ? AppIcons.tick : AppIcons.tick,
+                  size: 20,
+                  color: _spellCheckerStatus?['available'] == true ? AppColors.primary : null,
+                ),
                 title: const Text('System Grammar Checker'),
-                subtitle: const Text('Compatible apps can show local grammar & spelling suggestions while typing'),
+                subtitle: Text(
+                  _spellCheckerStatus?['available'] == true
+                      ? 'Available · Compatible apps show local suggestions'
+                      : 'Not available',
+                ),
                 trailing: FilledButton.tonal(
                   onPressed: () async {
                     try {
-                      final uri = Uri.parse('android.settings.TEXT_SERVICES_SETTINGS');
-                      final launched = await launchUrl(uri);
-                      if (!launched && context.mounted) {
-                        _showManualSettingsGuide(context, 'Spell Checker / Text Services');
-                      }
+                      await _settingsChannel.invokeMethod<bool>('openSpellCheckerSettingsIfSupported');
                     } catch (_) {
                       if (context.mounted) {
                         _showManualSettingsGuide(context, 'Spell Checker / Text Services');
                       }
                     }
+                    await _refreshNativeStatus();
                   },
-                  child: const Text('Enable'),
+                  child: const Text('Set up'),
                 ),
               ),
               const Divider(height: 1),
-              ListTile(
-                leading: const AppIcon(AppIcons.edit, size: 20),
-                title: const Text('Grammar Keyboard'),
-                subtitle: const Text('Optional on-device keyboard with real-time suggestion strip'),
-                trailing: FilledButton.tonal(
-                  onPressed: () => _showKeyboardSetupDialog(context),
-                  child: const Text('Set up'),
-                ),
+              const ListTile(
+                leading: AppIcon(AppIcons.more, size: 20),
+                title: Text('Select text → Fix grammar'),
+                subtitle: Text('Select text in any app, choose "Fix grammar" from the menu'),
               ),
             ]),
 

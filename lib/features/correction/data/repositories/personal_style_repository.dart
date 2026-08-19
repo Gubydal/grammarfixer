@@ -53,6 +53,21 @@ class PersonalStyleRepository {
     await _saveProfile();
   }
 
+  Future<void> updateFormality(FormalityStyle formality) async {
+    _cachedProfile = _cachedProfile.copyWith(formalityPreference: formality);
+    await _saveProfile();
+  }
+
+  Future<void> updateContractionsPreference(ContractionStyle preference) async {
+    _cachedProfile = _cachedProfile.copyWith(contractionsPreference: preference);
+    await _saveProfile();
+  }
+
+  Future<void> updateOxfordCommaPreference(OxfordCommaStyle preference) async {
+    _cachedProfile = _cachedProfile.copyWith(oxfordCommaPreference: preference);
+    await _saveProfile();
+  }
+
   Future<void> setPreferredTerm(String original, String preferred) async {
     if (_isPrivateMode) return; // Do not learn in private mode
 

@@ -102,6 +102,8 @@ class TypoCandidateEngine {
 
   // 4. Common missing apostrophes
   static const Map<String, String> _missingApostrophes = {
+    'im': "I'm",
+    'ive': "I've",
     'cant': "can't",
     'wont': "won't",
     'dont': "don't",
@@ -127,6 +129,9 @@ class TypoCandidateEngine {
     'hows': "how's",
     'lets': "let's",
     'doesnt': "doesn't",
+    'couldve': "could've",
+    'shouldve': "should've",
+    'wouldve': "would've",
   };
 
   // 5. Valid words with 2 repeated characters to NEVER collapse incorrectly

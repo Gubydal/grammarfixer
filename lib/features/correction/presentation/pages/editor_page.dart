@@ -8,11 +8,13 @@ import '../../../../design/components/app_button.dart';
 import '../../data/repositories/model_pack_repository.dart';
 import '../../data/repositories/personal_style_repository.dart';
 import '../../domain/entities/correction_mode.dart';
+import '../../domain/entities/writing_style_profile.dart';
 import '../cubits/correction_cubit.dart';
 import '../cubits/correction_state.dart';
 import '../cubits/model_pack_cubit.dart';
 import '../widgets/language_selector_sheet.dart';
 import '../widgets/model_pack_download_sheet.dart';
+import '../widgets/writing_style_sheet.dart';
 import 'review_mode_view.dart';
 
 class EditorPage extends StatefulWidget {
@@ -25,6 +27,7 @@ class EditorPage extends StatefulWidget {
 class _EditorPageState extends State<EditorPage> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  bool _suppressTextChangeCallback = false;
 
   @override
   void initState() {
@@ -33,6 +36,7 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   void _onTextChanged() {
+    if (_suppressTextChangeCallback) return;
     final cubit = context.read<CorrectionCubit>();
     if (cubit.state is! CorrectionReview && cubit.state is! CorrectionProcessing) {
       cubit.updateText(_textController.text);
@@ -46,6 +50,15 @@ class _EditorPageState extends State<EditorPage> {
     super.dispose();
   }
 
+  String _getStyleSummary(WritingStyleProfile profile) {
+    final formalityName = switch (profile.formalityPreference) {
+      FormalityStyle.formal => 'Professional',
+      FormalityStyle.casual => 'Casual',
+      FormalityStyle.neutral => 'Natural',
+    };
+    return '$formalityName · ${profile.dialect.displayName}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -54,10 +67,13 @@ class _EditorPageState extends State<EditorPage> {
     return BlocConsumer<CorrectionCubit, CorrectionState>(
       listener: (context, state) {
         if (state is CorrectionEditing && state.text != _textController.text) {
+          // Suppress callback to avoid re-triggering updateText
+          _suppressTextChangeCallback = true;
           _textController.value = TextEditingValue(
             text: state.text,
             selection: TextSelection.collapsed(offset: state.text.length),
           );
+          _suppressTextChangeCallback = false;
         } else if (state is CorrectionLanguagePackRequired) {
           ModelPackDownloadSheet.show(context);
         }
@@ -73,6 +89,9 @@ class _EditorPageState extends State<EditorPage> {
         final selectedLanguage = isEditingState ? state.selectedLanguage : null;
         final currentMode = isEditingState ? state.mode : CorrectionMode.correct;
         final isRtl = isEditingState ? state.isRtl : false;
+        final liveIssues = isEditingState ? state.liveIssues : [];
+        final lastAutoFix = isEditingState ? state.lastAutoFix : null;
+        final isLiveChecking = isEditingState ? state.isLiveChecking : false;
 
         final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
         final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
@@ -80,53 +99,56 @@ class _EditorPageState extends State<EditorPage> {
         final surfaceSoft = isDark ? AppColors.darkSurfaceElevated : AppColors.lightSurfaceSoft;
 
         final personalStyleRepo = context.read<PersonalStyleRepository>();
-        final currentDialect = personalStyleRepo.profile.dialect;
+        final styleProfile = personalStyleRepo.profile;
 
         return Directionality(
           textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
           child: Scaffold(
             appBar: AppBar(
+              titleSpacing: 12,
               title: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkPrimarySoft : AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(7),
                     ),
                     child: const Center(
                       child: AppIcon(
                         AppIcons.edit,
-                        size: 18,
+                        size: 15,
                         color: AppColors.primary,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 6),
                   Text(
                     'GrammarFix',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
+                      fontSize: 17,
                       color: textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurfaceGreen : AppColors.lightSurfaceStrong,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(5),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const AppIcon(AppIcons.lock, size: 11, color: AppColors.primary),
-                        const SizedBox(width: 4),
+                        const AppIcon(AppIcons.lock, size: 10, color: AppColors.primary),
+                        const SizedBox(width: 3),
                         Text(
                           'On-device',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 9,
                             fontWeight: FontWeight.w600,
                             color: isDark ? AppColors.darkPrimary : AppColors.primary,
                           ),
@@ -140,10 +162,13 @@ class _EditorPageState extends State<EditorPage> {
                 BlocBuilder<ModelPackCubit, ModelPackState>(
                   builder: (context, packState) {
                     return TextButton.icon(
-                      icon: const AppIcon(AppIcons.more, size: 16),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                      icon: const AppIcon(AppIcons.more, size: 14),
                       label: Text(
                         selectedLanguage?.displayName ?? 'Auto',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                       onPressed: () async {
                         final chosen = await LanguageSelectorSheet.show(
@@ -158,7 +183,7 @@ class _EditorPageState extends State<EditorPage> {
                     );
                   },
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
               ],
             ),
             body: SafeArea(
@@ -194,25 +219,113 @@ class _EditorPageState extends State<EditorPage> {
                           ),
                         ),
                         const Spacer(),
-                        // Personal Style Indicator Chip
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.darkSurfaceGreen : AppColors.primarySoft,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Using ${currentDialect.displayName}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                        // Personal Style Indicator Chip (Tappable for full customization)
+                        GestureDetector(
+                          onTap: () async {
+                            await WritingStyleSheet.show(context, personalStyleRepo: personalStyleRepo);
+                            if (context.mounted) {
+                              setState(() {});
+                              context.read<CorrectionCubit>().updateText(_textController.text);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.darkSurfaceGreen : AppColors.primarySoft,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isDark ? AppColors.darkPrimary.withValues(alpha: 0.3) : AppColors.primary.withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Style: ${_getStyleSummary(styleProfile)}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.tune,
+                                  size: 13,
+                                  color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
+
+                  // Quick Tone Bar (Shown in Improve mode for 1-tap style switching)
+                  if (currentMode == CorrectionMode.improve)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkSurfaceElevated : AppColors.lightSurfaceSoft,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Tone:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            _buildQuickToneChip(
+                              label: '👔 Professional',
+                              isSelected: styleProfile.formalityPreference == FormalityStyle.formal,
+                              isDark: isDark,
+                              onTap: () async {
+                                await personalStyleRepo.updateFormality(FormalityStyle.formal);
+                                setState(() {});
+                                if (context.mounted) {
+                                  context.read<CorrectionCubit>().updateText(_textController.text);
+                                }
+                              },
+                            ),
+                            const SizedBox(width: 6),
+                            _buildQuickToneChip(
+                              label: '🌿 Natural',
+                              isSelected: styleProfile.formalityPreference == FormalityStyle.neutral,
+                              isDark: isDark,
+                              onTap: () async {
+                                await personalStyleRepo.updateFormality(FormalityStyle.neutral);
+                                setState(() {});
+                                if (context.mounted) {
+                                  context.read<CorrectionCubit>().updateText(_textController.text);
+                                }
+                              },
+                            ),
+                            const SizedBox(width: 6),
+                            _buildQuickToneChip(
+                              label: '😊 Casual',
+                              isSelected: styleProfile.formalityPreference == FormalityStyle.casual,
+                              isDark: isDark,
+                              onTap: () async {
+                                await personalStyleRepo.updateFormality(FormalityStyle.casual);
+                                setState(() {});
+                                if (context.mounted) {
+                                  context.read<CorrectionCubit>().updateText(_textController.text);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -255,6 +368,9 @@ class _EditorPageState extends State<EditorPage> {
                                 ),
                               ),
                             ),
+                            // Live issue indicator strip (shown when there are unfixed live issues)
+                            if (liveIssues.isNotEmpty && lastAutoFix == null)
+                              _buildLiveIssueStrip(liveIssues, isDark, textPrimary),
                             // Quick Action Toolbar
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -316,6 +432,19 @@ class _EditorPageState extends State<EditorPage> {
                                     ),
                                   ],
                                   const Spacer(),
+                                  // Live checking indicator
+                                  if (isLiveChecking)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: SizedBox(
+                                        width: 12,
+                                        height: 12,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.5,
+                                          color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                                        ),
+                                      ),
+                                    ),
                                   Text(
                                     '${currentText.length} chars · ${currentText.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length} words',
                                     style: TextStyle(
@@ -332,6 +461,9 @@ class _EditorPageState extends State<EditorPage> {
                       ),
                     ),
                   ),
+                  // Auto-Fix Explanation Bar (shown after auto-fix is applied)
+                  if (lastAutoFix != null)
+                    _buildAutoFixBar(lastAutoFix, isDark),
                   if (state is CorrectionError) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -365,7 +497,7 @@ class _EditorPageState extends State<EditorPage> {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                     child: AppButton(
                       label: isProcessing
-                          ? 'Correcting on your phone…'
+                          ? 'Analyzing writing…'
                           : (currentMode == CorrectionMode.correct ? 'Correct' : 'Improve writing'),
                       icon: isProcessing ? null : AppIcons.tickCircle,
                       isLoading: isProcessing,
@@ -383,6 +515,163 @@ class _EditorPageState extends State<EditorPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildQuickToneChip({
+    required String label,
+    required bool isSelected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? AppColors.darkPrimary : AppColors.primary)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Compact live issue indicator strip (not full review mode).
+  Widget _buildLiveIssueStrip(List liveIssues, bool isDark, Color textPrimary) {
+    final issueCount = liveIssues.length;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.darkSurfaceGreen.withValues(alpha: 0.5)
+            : AppColors.primarySoft.withValues(alpha: 0.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$issueCount ${issueCount == 1 ? 'issue' : 'issues'} found',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.darkPrimary : AppColors.primary,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            'Tap Correct to review',
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Auto-fix explanation bar: "went → gone | Verb tense | Undo"
+  Widget _buildAutoFixBar(LiveAutoFix autoFix, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurfaceGreen : AppColors.primarySoft,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? AppColors.darkPrimary.withValues(alpha: 0.3) : AppColors.primary.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          children: [
+            const AppIcon(AppIcons.tickCircle, size: 16, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: autoFix.original,
+                      style: const TextStyle(
+                        decoration: TextDecoration.lineThrough,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const TextSpan(text: ' → '),
+                    TextSpan(
+                      text: autoFix.replacement,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '  ·  ${autoFix.reason}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => context.read<CorrectionCubit>().undoLiveAutoFix(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Undo',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: () => context.read<CorrectionCubit>().dismissAutoFixExplanation(),
+              child: Icon(
+                Icons.close,
+                size: 16,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

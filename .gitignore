@@ -1,8 +1,10 @@
+
 # Miscellaneous
 *.class
 *.log
 *.pyc
 *.swp
+*.zip
 .DS_Store
 .atom/
 .buildlog/
@@ -53,3 +55,4 @@ android/local.properties
 **/node_modules/
 .dev.vars
 .wrangler/
+artifacts/

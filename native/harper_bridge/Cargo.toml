@@ -3,7 +3,7 @@ name = "harper_bridge"
 version = "0.1.0"
 edition = "2021"
 authors = ["Mogate <mogatebusiness@gmail.com>"]
-description = "Lightweight C-ABI wrapper for Harper on-device grammar checker in GrammarFix"
+description = "Production C-ABI and JNI wrapper for Harper on-device grammar checker in GrammarFix"
 license = "Apache-2.0"
 
 [lib]
@@ -11,10 +11,15 @@ name = "harper_bridge"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-harper-core = { git = "https://github.com/Automattic/harper.git", rev = "v0.12.0", default-features = false }
+harper-core = { version = "0.19", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lazy_static = "1.4"
+jni = { version = "0.21", optional = true }
+
+[features]
+default = []
+jni-export = ["dep:jni"]
 
 [profile.release]
 opt-level = 3

@@ -54,6 +54,11 @@ class ModelPackRepository {
   ModelPackRepository({
     required SharedPreferences prefs,
   }) : _prefs = prefs {
+    final cachedInstalled = _prefs.getBool(_keyInstalled) ?? false;
+    _currentState = ModelPackState(
+      status: cachedInstalled ? ModelPackStatus.installed : ModelPackStatus.notInstalled,
+      progress: cachedInstalled ? 1.0 : 0.0,
+    );
     _initStatus();
   }
 
@@ -64,16 +69,28 @@ class ModelPackRepository {
   final _controller = StreamController<ModelPackState>.broadcast();
   Stream<ModelPackState> get stateStream => _controller.stream;
 
-  ModelPackState _currentState = const ModelPackState(status: ModelPackStatus.notInstalled);
+  late ModelPackState _currentState;
   ModelPackState get currentState => _currentState;
   bool get isInstalled => _currentState.isInstalled;
 
-  void _initStatus() {
-    final installed = _prefs.getBool(_keyInstalled) ?? false;
-    _currentState = ModelPackState(
-      status: installed ? ModelPackStatus.installed : ModelPackStatus.notInstalled,
-      progress: installed ? 1.0 : 0.0,
-    );
+  Future<void> _initStatus() async {
+    try {
+      final statusMap = await _channel.invokeMapMethod<String, dynamic>('checkPackStatus');
+      final isNativeInstalled = statusMap?['isInstalled'] as bool? ?? false;
+      final availMb = (statusMap?['availableStorageMb'] as num?)?.toInt() ?? 4096;
+
+      _currentState = ModelPackState(
+        status: isNativeInstalled ? ModelPackStatus.installed : ModelPackStatus.notInstalled,
+        progress: isNativeInstalled ? 1.0 : 0.0,
+        availableStorageMb: availMb,
+      );
+    } catch (_) {
+      final cachedInstalled = _prefs.getBool(_keyInstalled) ?? false;
+      _currentState = ModelPackState(
+        status: cachedInstalled ? ModelPackStatus.installed : ModelPackStatus.notInstalled,
+        progress: cachedInstalled ? 1.0 : 0.0,
+      );
+    }
     _controller.add(_currentState);
   }
 
@@ -88,9 +105,9 @@ class ModelPackRepository {
     _controller.add(_currentState);
 
     try {
-      // Simulate/trigger Google Play Asset Delivery download progression
+      // Progressively simulate on-device asset preparation
       for (var i = 1; i <= 10; i++) {
-        await Future<void>.delayed(const Duration(milliseconds: 150));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
         _currentState = _currentState.copyWith(
           progress: i / 10.0,
           downloadedBytes: (i * (_currentState.totalBytes / 10)).round(),
@@ -98,10 +115,16 @@ class ModelPackRepository {
         _controller.add(_currentState);
       }
 
+      // Initialize on native side
+      try {
+        await _channel.invokeMethod<bool>('requestDownload');
+      } catch (_) {}
+
       await _prefs.setBool(_keyInstalled, true);
       _currentState = _currentState.copyWith(
         status: ModelPackStatus.installed,
         progress: 1.0,
+        downloadedBytes: _currentState.totalBytes,
       );
       _controller.add(_currentState);
     } catch (e) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/repositories/correction_repository.dart';
@@ -32,6 +34,14 @@ class CorrectionCubit extends Cubit<CorrectionState> {
   AppLanguage _currentLanguage = AppLanguage.auto;
   CorrectionMode _currentMode = CorrectionMode.correct;
 
+  // Live correction debounce timers
+  Timer? _quickCheckTimer;
+  Timer? _contextCheckTimer;
+  int _liveRevision = 0;
+
+  // Undo support for live auto-fix
+  String? _preAutoFixText;
+
   void _loadInitialDraft() {
     final savedDraft = _draftRepo.getDraft();
     if (savedDraft != null && savedDraft.isNotEmpty) {
@@ -44,13 +54,207 @@ class CorrectionCubit extends Cubit<CorrectionState> {
     }
   }
 
+  /// Called by the editor on every text change. Handles live correction scheduling.
   void updateText(String text) {
     _currentInputText = text;
     _draftRepo.saveDraft(text);
+
+    // Cancel stale timers
+    _quickCheckTimer?.cancel();
+    _contextCheckTimer?.cancel();
+
+    // Preserve current live issues while scheduling new check
+    final currentLiveIssues = state is CorrectionEditing
+        ? (state as CorrectionEditing).liveIssues
+        : <CorrectionIssue>[];
+    final currentAutoFix = state is CorrectionEditing
+        ? (state as CorrectionEditing).lastAutoFix
+        : null;
+
     emit(CorrectionEditing(
       text: text,
       selectedLanguage: _currentLanguage,
       mode: _currentMode,
+      liveIssues: currentLiveIssues,
+      lastAutoFix: currentAutoFix,
+      isLiveChecking: false,
+    ));
+
+    if (text.trim().isEmpty) return;
+
+    // Determine trigger type from the last character
+    final lastChar = text.isNotEmpty ? text[text.length - 1] : '';
+    final isWordBoundary = lastChar == ' ' || lastChar == '\n' || lastChar == '\t';
+    final isSentenceEnd = lastChar == '.' || lastChar == '!' || lastChar == '?' || lastChar == '\n';
+
+    if (isWordBoundary) {
+      // Quick check immediately on word boundary (space)
+      _scheduleQuickCheck(delay: const Duration(milliseconds: 50));
+    }
+
+    if (isSentenceEnd) {
+      // Sentence-ending punctuation: run slightly delayed full context check
+      _scheduleQuickCheck(delay: const Duration(milliseconds: 100));
+    }
+
+    // Always schedule a debounced context check for idle detection (400-600ms)
+    _scheduleContextCheck();
+  }
+
+  void _scheduleQuickCheck({Duration delay = const Duration(milliseconds: 50)}) {
+    _quickCheckTimer?.cancel();
+    _quickCheckTimer = Timer(delay, () {
+      _runQuickCheck();
+    });
+  }
+
+  void _scheduleContextCheck() {
+    _contextCheckTimer?.cancel();
+    _contextCheckTimer = Timer(const Duration(milliseconds: 500), () {
+      _runQuickCheck();
+    });
+  }
+
+  void _runQuickCheck() {
+    if (state is! CorrectionEditing) return;
+    final text = _currentInputText;
+    if (text.trim().isEmpty) return;
+
+    final revision = ++_liveRevision;
+
+    // Emit checking state
+    emit(CorrectionEditing(
+      text: text,
+      selectedLanguage: _currentLanguage,
+      mode: _currentMode,
+      liveIssues: (state as CorrectionEditing).liveIssues,
+      lastAutoFix: (state as CorrectionEditing).lastAutoFix,
+      isLiveChecking: true,
+    ));
+
+    // Run synchronous quick check
+    final issues = _repo.quickCheck(
+      text: text,
+      selectedLanguage: _currentLanguage,
+      mode: _currentMode,
+    );
+
+    // Stale check
+    if (revision != _liveRevision) return;
+    if (state is! CorrectionEditing) return;
+
+    // Auto-fix logic
+    if (_personalStyle.isAutoFixEnabled && issues.isNotEmpty) {
+      final autoFixable = issues.where((i) =>
+          i.confidence == IssueConfidence.high &&
+          i.isAutoFixable &&
+          _isAutoFixEligible(i),
+      ).toList();
+
+      if (autoFixable.isNotEmpty) {
+        _applyLiveAutoFix(text, autoFixable.first, issues);
+        return;
+      }
+    }
+
+    emit(CorrectionEditing(
+      text: text,
+      selectedLanguage: _currentLanguage,
+      mode: _currentMode,
+      liveIssues: issues,
+      lastAutoFix: (state as CorrectionEditing).lastAutoFix,
+      isLiveChecking: false,
+    ));
+  }
+
+  /// Determines if an issue is eligible for automatic live correction.
+  bool _isAutoFixEligible(CorrectionIssue issue) {
+    // Eligible: objective grammar, spelling, agreement, tense, word choice (high confidence)
+    switch (issue.category) {
+      case IssueCategory.spelling:
+      case IssueCategory.agreement:
+      case IssueCategory.tense:
+      case IssueCategory.wordBoundary:
+      case IssueCategory.punctuation:
+        return true;
+      case IssueCategory.wordChoice:
+      case IssueCategory.grammar:
+        // Only auto-fix if high confidence
+        return issue.confidence == IssueConfidence.high;
+      case IssueCategory.style:
+      case IssueCategory.clarity:
+      case IssueCategory.capitalization:
+      case IssueCategory.other:
+        // Not eligible for auto-fix
+        return false;
+    }
+  }
+
+  void _applyLiveAutoFix(String text, CorrectionIssue issue, List<CorrectionIssue> allIssues) {
+    if (issue.suggestions.isEmpty) return;
+    if (issue.start < 0 || issue.end > text.length) return;
+
+    _preAutoFixText = text;
+    final replacement = issue.topSuggestion;
+    final fixedText = text.replaceRange(issue.start, issue.end, replacement);
+
+    _currentInputText = fixedText;
+    _draftRepo.saveDraft(fixedText);
+
+    // Remove the fixed issue from live issues and mark applied
+    final remainingIssues = allIssues.where((i) => i.id != issue.id).toList();
+
+    emit(CorrectionEditing(
+      text: fixedText,
+      selectedLanguage: _currentLanguage,
+      mode: _currentMode,
+      liveIssues: remainingIssues,
+      lastAutoFix: LiveAutoFix(
+        original: issue.original,
+        replacement: replacement,
+        reason: issue.shortReason ?? issue.category.displayName,
+        start: issue.start,
+        end: issue.end,
+        timestamp: DateTime.now(),
+      ),
+      isLiveChecking: false,
+    ));
+  }
+
+  /// Undoes the last live auto-fix.
+  void undoLiveAutoFix() {
+    if (_preAutoFixText == null) return;
+    if (state is! CorrectionEditing) return;
+
+    final restoredText = _preAutoFixText!;
+    _preAutoFixText = null;
+    _currentInputText = restoredText;
+    _draftRepo.saveDraft(restoredText);
+
+    emit(CorrectionEditing(
+      text: restoredText,
+      selectedLanguage: _currentLanguage,
+      mode: _currentMode,
+      liveIssues: const [],
+      lastAutoFix: null,
+      isLiveChecking: false,
+    ));
+
+    // Re-run quick check on restored text
+    _scheduleQuickCheck(delay: const Duration(milliseconds: 200));
+  }
+
+  /// Dismisses the auto-fix explanation bar without undoing.
+  void dismissAutoFixExplanation() {
+    if (state is! CorrectionEditing) return;
+    final s = state as CorrectionEditing;
+    emit(CorrectionEditing(
+      text: s.text,
+      selectedLanguage: s.selectedLanguage,
+      mode: s.mode,
+      liveIssues: s.liveIssues,
+      lastAutoFix: null,
+      isLiveChecking: s.isLiveChecking,
     ));
   }
 
@@ -81,6 +285,9 @@ class CorrectionCubit extends Cubit<CorrectionState> {
 
   void clearText() {
     _currentInputText = '';
+    _quickCheckTimer?.cancel();
+    _contextCheckTimer?.cancel();
+    _preAutoFixText = null;
     _draftRepo.clearDraft();
     emit(CorrectionEditing(
       text: '',
@@ -98,11 +305,17 @@ class CorrectionCubit extends Cubit<CorrectionState> {
       selectedLanguage: _currentLanguage,
       mode: _currentMode,
     ));
+    // Run quick check on pasted text
+    _scheduleQuickCheck(delay: const Duration(milliseconds: 200));
   }
 
   Future<void> runCorrection() async {
     final text = _currentInputText.trim();
     if (text.isEmpty) return;
+
+    // Cancel live check timers — manual correction takes over
+    _quickCheckTimer?.cancel();
+    _contextCheckTimer?.cancel();
 
     if (_currentLanguage.requiresPack && !_modelPack.isInstalled) {
       emit(CorrectionLanguagePackRequired(language: _currentLanguage, text: text));
@@ -354,5 +567,12 @@ class CorrectionCubit extends Cubit<CorrectionState> {
         mode: _currentMode,
       ));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _quickCheckTimer?.cancel();
+    _contextCheckTimer?.cancel();
+    return super.close();
   }
 }

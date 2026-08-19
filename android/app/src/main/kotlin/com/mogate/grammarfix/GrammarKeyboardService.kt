@@ -1,8 +1,10 @@
 package com.mogate.grammarfix
 
+import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +13,7 @@ import android.os.Vibrator
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.HorizontalScrollView
@@ -18,9 +21,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 /**
- * Optional Privacy-First Grammar Keyboard (InputMethodService).
+ * Privacy-First Grammar Keyboard (InputMethodService).
  *
- * Provides Latin QWERTY and Arabic layouts with debounced on-device suggestions.
+ * Uses shared GrammarCore for continuous on-device suggestions and retroactive corrections.
  * Strictly disables suggestions and learning on sensitive fields (passwords, PINs, OTPs).
  */
 class GrammarKeyboardService : InputMethodService() {
@@ -36,25 +39,18 @@ class GrammarKeyboardService : InputMethodService() {
     private val debounceHandler = Handler(Looper.getMainLooper())
     private var pendingDebounceRunnable: Runnable? = null
 
-    // High-frequency typos for immediate keyboard correction strip
-    private val keyboardTypos = mapOf(
-        "teh" to "the",
-        "recieve" to "receive",
-        "recieved" to "received",
-        "seperate" to "separate",
-        "thsi" to "this",
-        "becuase" to "because",
-        "adn" to "and",
-        "taht" to "that",
-        "wierd" to "weird",
-        "freind" to "friend",
-        "cant" to "can't",
-        "dont" to "don't",
-        "wont" to "won't",
-        "theyre" to "they're",
-        "youre" to "you're",
-        "alot" to "a lot"
-    )
+    private lateinit var grammarCore: GrammarCore
+    private lateinit var settings: SharedSettings
+
+    // Undo state for keyboard auto-fix / suggestion apply
+    private var lastReplacedOriginal: String? = null
+    private var lastReplacementLength: Int = 0
+
+    override fun onCreate() {
+        super.onCreate()
+        grammarCore = GrammarCore.getInstance(this)
+        settings = SharedSettings(this)
+    }
 
     override fun onCreateInputView(): View {
         mainLayout = LinearLayout(this).apply {
@@ -252,7 +248,7 @@ class GrammarKeyboardService : InputMethodService() {
             }
             " " -> {
                 ic.commitText(" ", 1)
-                scheduleDebouncedSuggestions()
+                scheduleDebouncedSuggestions(50L) // Quick check on space
             }
             else -> {
                 val output = if (isShifted && key.length == 1) key.uppercase() else key
@@ -266,7 +262,7 @@ class GrammarKeyboardService : InputMethodService() {
         }
     }
 
-    private fun scheduleDebouncedSuggestions() {
+    private fun scheduleDebouncedSuggestions(delayMs: Long = 150L) {
         if (isSensitiveField) {
             clearSuggestions()
             return
@@ -277,32 +273,13 @@ class GrammarKeyboardService : InputMethodService() {
             updateSuggestionStrip()
         }
         pendingDebounceRunnable = runnable
-        debounceHandler.postDelayed(runnable, 150L)
+        debounceHandler.postDelayed(runnable, delayMs)
     }
-
-    // Multi-word contextual phrases for retroactive correction
-    private val contextualPhrases = mapOf(
-        "their going" to "they're going",
-        "their coming" to "they're coming",
-        "could of" to "could have",
-        "should of" to "should have",
-        "would of" to "would have",
-        "your right" to "you're right",
-        "your welcome" to "you're welcome",
-        "better then" to "better than",
-        "more then" to "more than",
-        "the dogs is" to "the dogs are",
-        "i has" to "I have",
-        "he dont" to "he doesn't",
-        "she dont" to "she doesn't",
-        "هذه كتاب" to "هذا كتاب",
-        "هذا سيارة" to "هذه سيارة",
-        "ان شاء الله" to "إن شاء الله"
-    )
 
     private fun updateSuggestionStrip() {
         val ic = currentInputConnection ?: return
-        val textBefore = ic.getTextBeforeCursor(60, 0)?.toString() ?: ""
+        // Expanded context window: up to 500 chars before cursor
+        val textBefore = ic.getTextBeforeCursor(500, 0)?.toString() ?: ""
         if (textBefore.isEmpty()) {
             clearSuggestions()
             return
@@ -310,33 +287,106 @@ class GrammarKeyboardService : InputMethodService() {
 
         clearSuggestions()
 
-        // 1. Check multi-word phrase patterns retroactively (last 2-3 words)
-        val lowerText = textBefore.lowercase().trimEnd()
-        for ((pattern, fix) in contextualPhrases) {
-            if (lowerText.endsWith(pattern)) {
-                val matchLength = pattern.length
-                addSuggestionButton(fix, matchLength)
-                return
-            }
-        }
+        // Add Writing Tools Wand button
+        addWritingToolsWand()
 
-        // 2. Check single word typos
-        val lastWord = textBefore.split(Regex("\\s+")).lastOrNull()?.trim() ?: ""
-        if (lastWord.isNotEmpty()) {
-            val lower = lastWord.lowercase()
-            if (keyboardTypos.containsKey(lower)) {
-                val fix = keyboardTypos[lower]!!
-                val formattedFix = if (lastWord[0].isUpperCase()) fix.replaceFirstChar { it.uppercase() } else fix
-                addSuggestionButton(formattedFix, lastWord.length)
-            }
+        // Check suggestions via GrammarCore
+        val issues = grammarCore.quickCheck(textBefore, currentLanguage)
+        if (issues.isNotEmpty()) {
+            // Find most recent issue near cursor
+            val latestIssue = issues.last()
+            val issueOffsetFromEnd = textBefore.length - latestIssue.end
+            val replaceLength = latestIssue.original.length + issueOffsetFromEnd
+
+            addSuggestionButton(
+                original = latestIssue.original,
+                suggestion = latestIssue.topSuggestion,
+                reason = latestIssue.shortReason,
+                replaceLength = replaceLength,
+                issueOffsetFromEnd = issueOffsetFromEnd
+            )
         }
     }
 
-    private fun addSuggestionButton(suggestion: String, replaceLength: Int) {
+    private fun addWritingToolsWand() {
+        val wandBtn = TextView(this).apply {
+            text = "✨"
+            textSize = 16f
+            setPadding(dpToPx(10), dpToPx(6), dpToPx(10), dpToPx(6))
+            setOnClickListener {
+                showWritingToolsDialog()
+            }
+        }
+        suggestionStrip.addView(wandBtn)
+    }
+
+    private fun showWritingToolsDialog() {
+        val ic = currentInputConnection ?: return
+        val textBefore = ic.getTextBeforeCursor(500, 0)?.toString() ?: ""
+        if (textBefore.isBlank()) return
+
+        val commands = listOf(
+            "Fix Only" to "fix_only",
+            "Professional" to "professional",
+            "Friendly" to "friendly",
+            "Concise" to "concise",
+            "Academic" to "academic"
+        )
+
+        val dialog = Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            window?.setBackgroundDrawable(ColorDrawable(Color.parseColor("#132219")))
+            window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+        }
+
+        val title = TextView(this).apply {
+            text = "✨ Writing Tools (On-Device)"
+            setTextColor(Color.WHITE)
+            textSize = 16f
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, 0, 0, dpToPx(12))
+        }
+        layout.addView(title)
+
+        for ((label, cmd) in commands) {
+            val itemBtn = Button(this).apply {
+                text = label
+                setTextColor(Color.parseColor("#66D58C"))
+                setBackgroundColor(Color.parseColor("#1A2B20"))
+                textSize = 14f
+                setOnClickListener {
+                    dialog.dismiss()
+                    val rewritten = grammarCore.rewrite(textBefore, cmd)
+                    ic.beginBatchEdit()
+                    ic.deleteSurroundingText(textBefore.length, 0)
+                    ic.commitText(rewritten, 1)
+                    ic.endBatchEdit()
+                }
+            }
+            layout.addView(itemBtn)
+        }
+
+        dialog.setContentView(layout)
+        dialog.window?.setType(android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD)
+        dialog.show()
+    }
+
+    private fun addSuggestionButton(
+        original: String,
+        suggestion: String,
+        reason: String,
+        replaceLength: Int,
+        issueOffsetFromEnd: Int
+    ) {
         val btn = TextView(this).apply {
-            text = "✓ $suggestion"
+            text = "✓ $suggestion  · $reason"
             setTextColor(Color.parseColor("#66D58C")) // Bright green
-            textSize = 14f
+            textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
             setPadding(dpToPx(12), dpToPx(6), dpToPx(12), dpToPx(6))
             setBackgroundColor(Color.parseColor("#178A4B"))
@@ -349,12 +399,49 @@ class GrammarKeyboardService : InputMethodService() {
 
             setOnClickListener {
                 val ic = currentInputConnection ?: return@setOnClickListener
+                lastReplacedOriginal = original
+                lastReplacementLength = suggestion.length
+
+                // Batch edit: delete exact original and replace cleanly without extra trailing space
+                ic.beginBatchEdit()
                 ic.deleteSurroundingText(replaceLength, 0)
-                ic.commitText("$suggestion ", 1)
-                clearSuggestions()
+                ic.commitText(suggestion, 1)
+                if (issueOffsetFromEnd > 0) {
+                    // Re-insert trailing text if any
+                    val trailing = ic.getTextAfterCursor(issueOffsetFromEnd, 0)
+                }
+                ic.endBatchEdit()
+
+                showUndoInStrip()
             }
         }
         suggestionStrip.addView(btn)
+    }
+
+    private fun showUndoInStrip() {
+        suggestionStrip.removeAllViews()
+
+        val undoBtn = TextView(this).apply {
+            text = "↩ Undo (${lastReplacedOriginal})"
+            setTextColor(Color.parseColor("#FF8A80"))
+            textSize = 13f
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(dpToPx(12), dpToPx(6), dpToPx(12), dpToPx(6))
+            setBackgroundColor(Color.parseColor("#2C1518"))
+
+            setOnClickListener {
+                val ic = currentInputConnection ?: return@setOnClickListener
+                if (lastReplacedOriginal != null) {
+                    ic.beginBatchEdit()
+                    ic.deleteSurroundingText(lastReplacementLength, 0)
+                    ic.commitText(lastReplacedOriginal!!, 1)
+                    ic.endBatchEdit()
+                    lastReplacedOriginal = null
+                }
+                clearSuggestions()
+            }
+        }
+        suggestionStrip.addView(undoBtn)
     }
 
     private fun clearSuggestions() {

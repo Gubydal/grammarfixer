@@ -3,11 +3,13 @@ import '../../domain/entities/correction_mode.dart';
 import '../../domain/entities/correction_result.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/services/correction_merger.dart';
+import '../../domain/services/english_context_rules.dart';
 import '../../domain/services/harper_engine.dart';
 import '../../domain/services/language_detector.dart';
 import '../../domain/services/multilingual_engine.dart';
 import '../../domain/services/protected_span_detector.dart';
 import '../../domain/services/typo_candidate_engine.dart';
+import '../../domain/services/writing_style_engine.dart';
 import 'custom_dictionary_repository.dart';
 import 'model_pack_repository.dart';
 import 'personal_style_repository.dart';
@@ -22,6 +24,8 @@ class CorrectionRepository {
     required PersonalStyleRepository personalStyleRepo,
     TypoCandidateEngine? typoCandidateEngine,
     CorrectionMerger? correctionMerger,
+    EnglishContextRules? contextRules,
+    WritingStyleEngine? styleEngine,
   })  : _harper = harperEngine,
         _multilingual = multilingualEngine,
         _detector = languageDetector,
@@ -29,7 +33,9 @@ class CorrectionRepository {
         _modelPack = modelPackRepo,
         _personalStyle = personalStyleRepo,
         _typoEngine = typoCandidateEngine ?? TypoCandidateEngine(),
-        _merger = correctionMerger ?? const CorrectionMerger() {
+        _merger = correctionMerger ?? const CorrectionMerger(),
+        _contextRules = contextRules ?? const EnglishContextRules(),
+        _styleEngine = styleEngine ?? const WritingStyleEngine() {
     _syncUserDictionary();
   }
 
@@ -41,6 +47,8 @@ class CorrectionRepository {
   final PersonalStyleRepository _personalStyle;
   final TypoCandidateEngine _typoEngine;
   final CorrectionMerger _merger;
+  final EnglishContextRules _contextRules;
+  final WritingStyleEngine _styleEngine;
 
   int _latestRevision = 0;
   int get latestRevision => _latestRevision;
@@ -69,7 +77,68 @@ class CorrectionRepository {
     _syncUserDictionary();
   }
 
-  /// Runs multi-layer grammar, spelling, typo, and context correction on [text].
+  /// Fast lightweight check for live typing — typo + Harper deterministic + context + style rules.
+  List<CorrectionIssue> quickCheck({
+    required String text,
+    AppLanguage selectedLanguage = AppLanguage.auto,
+    CorrectionMode mode = CorrectionMode.correct,
+  }) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return const [];
+
+    final protectedSpans = ProtectedSpanDetector.detect(text);
+
+    AppLanguage targetLanguage = selectedLanguage;
+    if (selectedLanguage == AppLanguage.auto) {
+      final detected = _detector.detect(text);
+      targetLanguage = detected.language;
+    }
+
+    if (targetLanguage != AppLanguage.english) return const [];
+
+    final styleProfile = _personalStyle.profile;
+
+    // Layer A: Fast typo & word-boundary engine
+    final typoIssues = _typoEngine.findTypoIssues(
+      text,
+      language: targetLanguage,
+      dialect: styleProfile.dialect,
+      protectedSpans: protectedSpans,
+    );
+
+    // Layer B: Harper deterministic rules
+    final harperResult = _harper.lint(
+      text: text,
+      revision: 0,
+      protectedSpans: protectedSpans,
+    );
+
+    // Layer C: English context rules (capitalization, greetings, questions, agreement, homophones)
+    final contextIssues = _contextRules.findIssues(text, protectedSpans: protectedSpans);
+
+    // Layer D: Writing style enhancements
+    final styleIssues = _styleEngine.findStyleIssues(
+      text: text,
+      profile: styleProfile,
+      mode: mode,
+      protectedSpans: protectedSpans,
+    );
+
+    // Merge all candidates
+    final unifiedIssues = _merger.merge(
+      text: text,
+      typoIssues: typoIssues,
+      harperIssues: harperResult.issues,
+      modelIssues: [...contextIssues, ...styleIssues],
+      styleProfile: styleProfile,
+      mode: mode,
+      protectedSpans: protectedSpans,
+    );
+
+    return unifiedIssues;
+  }
+
+  /// Runs multi-layer grammar, spelling, typo, context, and style correction on [text].
   Future<CorrectionResult> correct({
     required String text,
     AppLanguage selectedLanguage = AppLanguage.auto,
@@ -125,7 +194,18 @@ class CorrectionRepository {
       );
       harperIssues = harperResult.issues;
 
-      // Layer C: Contextual local model (if model pack is installed)
+      // Layer C: English context rules (capitalization, greetings, questions, agreement, homophones)
+      final contextIssues = _contextRules.findIssues(text, protectedSpans: protectedSpans);
+
+      // Layer D: Writing style enhancements
+      final styleIssues = _styleEngine.findStyleIssues(
+        text: text,
+        profile: styleProfile,
+        mode: mode,
+        protectedSpans: protectedSpans,
+      );
+
+      // Layer E: Contextual local model (if model pack is installed)
       if (_modelPack.currentState.isInstalled) {
         try {
           final qwenResult = await _multilingual.correct(
@@ -133,10 +213,12 @@ class CorrectionRepository {
             language: targetLanguage,
             revision: currentRevision,
           );
-          modelIssues = qwenResult.issues;
+          modelIssues = [...contextIssues, ...styleIssues, ...qwenResult.issues];
         } catch (_) {
-          // Model error ignored; typo + Harper provide full offline English coverage
+          modelIssues = [...contextIssues, ...styleIssues];
         }
+      } else {
+        modelIssues = [...contextIssues, ...styleIssues];
       }
     } else {
       // Non-English: check if multilingual pack is installed
@@ -187,7 +269,7 @@ class CorrectionRepository {
       issues: unifiedIssues,
       language: targetLanguage,
       engineName: targetLanguage == AppLanguage.english
-          ? (_modelPack.currentState.isInstalled ? 'Harper + Contextual Model' : 'Harper + Fast Typo Engine')
+          ? (_modelPack.currentState.isInstalled ? 'Harper + Contextual Model' : 'Harper + Context Rules + Fast Typo Engine')
           : 'Qwen3-0.6B (LiteRT-LM)',
       latencyMs: elapsed,
       charCount: text.length,

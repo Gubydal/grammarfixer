@@ -140,7 +140,7 @@ class HarperEngine {
         correctedText: '',
         issues: const [],
         language: AppLanguage.english,
-        engineName: 'Harper (harper-core)',
+        engineName: isNativeAvailable ? 'Harper Native' : 'Dart Rules Fallback',
         latencyMs: 0,
         charCount: 0,
         wordCount: 0,
@@ -154,7 +154,7 @@ class HarperEngine {
       }
     }
 
-    // Fallback: rule-based English GEC & spell check engine
+    // Fallback: rule-based English GEC & spell check engine (NOT Harper native)
     return _lintViaFallback(text, revision, sourceHash, startTime, protectedSpans);
   }
 
@@ -194,7 +194,7 @@ class HarperEngine {
             correctedText: corrected,
             issues: issues,
             language: AppLanguage.english,
-            engineName: 'Harper Native (harper-core)',
+            engineName: 'Harper Native',
             latencyMs: elapsed,
             charCount: text.length,
             wordCount: text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length,
@@ -590,7 +590,7 @@ class HarperEngine {
       correctedText: corrected,
       issues: issues,
       language: AppLanguage.english,
-      engineName: 'Harper Rules Engine',
+      engineName: 'Dart Rules Fallback',
       latencyMs: elapsed,
       charCount: text.length,
       wordCount: text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length,

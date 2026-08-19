@@ -1,0 +1,106 @@
+[
+  {
+    "id": "owner_01",
+    "category": "agreement",
+    "input": "I has a car.",
+    "expected": "I have a car.",
+    "required_edits": ["has->have"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_02",
+    "category": "tense",
+    "input": "I have went there.",
+    "expected": "I have gone there.",
+    "required_edits": ["went->gone"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_03",
+    "category": "word_choice",
+    "input": "Your going to like it.",
+    "expected": "You're going to like it.",
+    "required_edits": ["Your->You're"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_04",
+    "category": "word_choice",
+    "input": "Their coming over later.",
+    "expected": "They're coming over later.",
+    "required_edits": ["Their->They're"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_05",
+    "category": "word_choice",
+    "input": "I need too go now.",
+    "expected": "I need to go now.",
+    "required_edits": ["too->to"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_06",
+    "category": "grammar",
+    "input": "You could of told me.",
+    "expected": "You could have told me.",
+    "required_edits": ["of->have"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_07",
+    "category": "word_choice",
+    "input": "It is better then nothing.",
+    "expected": "It is better than nothing.",
+    "required_edits": ["then->than"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_08",
+    "category": "spelling",
+    "input": "I will recieve the package.",
+    "expected": "I will receive the package.",
+    "required_edits": ["recieve->receive"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_09",
+    "category": "spelling",
+    "input": "Keep them in seperate boxes.",
+    "expected": "Keep them in separate boxes.",
+    "required_edits": ["seperate->separate"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_10",
+    "category": "agreement",
+    "input": "The dogs is barking loudly.",
+    "expected": "The dogs are barking loudly.",
+    "required_edits": ["is->are"],
+    "is_auto_fixable": true
+  },
+  {
+    "id": "owner_11",
+    "category": "clean_no_edit",
+    "input": "The quick brown fox jumps over the lazy dog.",
+    "expected": "The quick brown fox jumps over the lazy dog.",
+    "required_edits": [],
+    "forbidden_edits": ["*"]
+  },
+  {
+    "id": "owner_12",
+    "category": "clean_no_edit",
+    "input": "We went to the store and bought apples, oranges, and bananas.",
+    "expected": "We went to the store and bought apples, oranges, and bananas.",
+    "required_edits": [],
+    "forbidden_edits": ["*"]
+  },
+  {
+    "id": "owner_13",
+    "category": "protected_spans",
+    "input": "Check https://github.com/Gubydal/grammarfixer for updates or email user@test.com #flutter",
+    "expected": "Check https://github.com/Gubydal/grammarfixer for updates or email user@test.com #flutter",
+    "required_edits": [],
+    "forbidden_edits": ["https://github.com/Gubydal/grammarfixer", "user@test.com", "#flutter"]
+  }
+]

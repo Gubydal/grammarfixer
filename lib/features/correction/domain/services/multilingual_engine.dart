@@ -17,12 +17,12 @@ class MultilingualEngine implements LocalGrammarModel {
 
   final CorrectionDiffService _diffService;
 
-  static const MethodChannel _channel = MethodChannel('com.mogate.grammarfix/litert_lm');
+  static const MethodChannel _channel = MethodChannel('com.mogate.grammarfix/grammar_core');
 
   @override
   Future<bool> isReady() async {
     try {
-      return await _channel.invokeMethod<bool>('isModelReady') ?? false;
+      return await _channel.invokeMethod<bool>('isContextModelReady') ?? false;
     } catch (_) {
       return false;
     }
@@ -41,8 +41,8 @@ class MultilingualEngine implements LocalGrammarModel {
     }
 
     try {
-      // 1. Check if model is loaded on Android via LiteRT-LM platform channel
-      final isReady = await _channel.invokeMethod<bool>('isModelReady') ?? false;
+      // 1. Check if model is loaded on Android via platform channel
+      final isReady = await _channel.invokeMethod<bool>('isContextModelReady') ?? false;
 
       String correctedText;
       String engineUsed;
