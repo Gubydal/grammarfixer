@@ -2,6 +2,7 @@ import '../../domain/entities/correction_issue.dart';
 import '../../domain/entities/correction_mode.dart';
 import '../../domain/entities/correction_result.dart';
 import '../../domain/entities/language.dart';
+import '../../domain/services/sentence_rewrite_engine.dart';
 
 sealed class CorrectionState {
   const CorrectionState();
@@ -45,6 +46,7 @@ class CorrectionEditing extends CorrectionState {
     this.detectedLanguage = AppLanguage.english,
     this.mode = CorrectionMode.correct,
     this.liveIssues = const [],
+    this.rewriteOptions = const [],
     this.lastAutoFix,
     this.isLiveChecking = false,
   });
@@ -56,6 +58,9 @@ class CorrectionEditing extends CorrectionState {
 
   /// Issues found by live/debounced checking (shown inline, not in review mode).
   final List<CorrectionIssue> liveIssues;
+
+  /// Multi-option rewrite alternatives (generated in Improve mode).
+  final List<RewriteOption> rewriteOptions;
 
   /// Most recent auto-fix applied (for explanation bar + undo).
   final LiveAutoFix? lastAutoFix;
@@ -90,6 +95,7 @@ class CorrectionReview extends CorrectionState {
     this.selectedIssue,
     required this.language,
     this.mode = CorrectionMode.correct,
+    this.rewriteOptions = const [],
     this.isFixedAll = false,
     this.isBeforeAfterVisible = false,
     this.undoStack = const [],
@@ -102,6 +108,7 @@ class CorrectionReview extends CorrectionState {
   final CorrectionIssue? selectedIssue;
   final AppLanguage language;
   final CorrectionMode mode;
+  final List<RewriteOption> rewriteOptions;
   final bool isFixedAll;
   final bool isBeforeAfterVisible;
   final List<String> undoStack;

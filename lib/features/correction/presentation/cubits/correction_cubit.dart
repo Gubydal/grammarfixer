@@ -9,6 +9,7 @@ import '../../data/repositories/personal_style_repository.dart';
 import '../../domain/entities/correction_issue.dart';
 import '../../domain/entities/correction_mode.dart';
 import '../../domain/entities/language.dart';
+import '../../domain/services/sentence_rewrite_engine.dart';
 import 'correction_state.dart';
 
 class CorrectionCubit extends Cubit<CorrectionState> {
@@ -17,10 +18,12 @@ class CorrectionCubit extends Cubit<CorrectionState> {
     required ModelPackRepository modelPackRepository,
     required DraftRepository draftRepository,
     required PersonalStyleRepository personalStyleRepository,
+    SentenceRewriteEngine? rewriteEngine,
   })  : _repo = repository,
         _modelPack = modelPackRepository,
         _draftRepo = draftRepository,
         _personalStyle = personalStyleRepository,
+        _rewriteEngine = rewriteEngine ?? const SentenceRewriteEngine(),
         super(const CorrectionInitial()) {
     _loadInitialDraft();
   }
@@ -29,6 +32,7 @@ class CorrectionCubit extends Cubit<CorrectionState> {
   final ModelPackRepository _modelPack;
   final DraftRepository _draftRepo;
   final PersonalStyleRepository _personalStyle;
+  final SentenceRewriteEngine _rewriteEngine;
 
   String _currentInputText = '';
   AppLanguage _currentLanguage = AppLanguage.auto;
@@ -157,14 +161,51 @@ class CorrectionCubit extends Cubit<CorrectionState> {
       }
     }
 
+    // Generate rewrite options if in Improve mode
+    final rewrites = _currentMode == CorrectionMode.improve
+        ? _rewriteEngine.generateRewrites(
+            sourceText: text,
+            baseCorrectedText: _repo.applyFixAll(text, issues),
+            dialect: _personalStyle.profile.dialect,
+          )
+        : const <RewriteOption>[];
+
     emit(CorrectionEditing(
       text: text,
       selectedLanguage: _currentLanguage,
       mode: _currentMode,
       liveIssues: issues,
+      rewriteOptions: rewrites,
       lastAutoFix: (state as CorrectionEditing).lastAutoFix,
       isLiveChecking: false,
     ));
+  }
+
+  /// Applies a multi-option rewrite alternative directly to the text editor.
+  void applyRewriteOption(RewriteOption option) {
+    final newText = option.rewrittenText;
+    _currentInputText = newText;
+    _draftRepo.saveDraft(newText);
+
+    emit(CorrectionEditing(
+      text: newText,
+      selectedLanguage: _currentLanguage,
+      mode: _currentMode,
+      liveIssues: const [],
+      rewriteOptions: const [],
+      lastAutoFix: LiveAutoFix(
+        original: 'Tone applied',
+        replacement: option.toneLabel,
+        reason: 'Rewritten into ${option.toneLabel} style',
+        start: 0,
+        end: 0,
+        timestamp: DateTime.now(),
+      ),
+      isLiveChecking: false,
+    ));
+
+    // Re-check rewritten text after brief pause
+    _scheduleQuickCheck(delay: const Duration(milliseconds: 300));
   }
 
   /// Determines if an issue is eligible for automatic live correction.
@@ -355,6 +396,14 @@ class CorrectionCubit extends Cubit<CorrectionState> {
         }
       }
 
+      final rewrites = _currentMode == CorrectionMode.improve
+          ? _rewriteEngine.generateRewrites(
+              sourceText: text,
+              baseCorrectedText: currentWorkingText,
+              dialect: _personalStyle.profile.dialect,
+            )
+          : const <RewriteOption>[];
+
       emit(CorrectionReview(
         sourceText: text,
         currentText: currentWorkingText,
@@ -362,6 +411,7 @@ class CorrectionCubit extends Cubit<CorrectionState> {
         issues: issues,
         language: result.language,
         mode: _currentMode,
+        rewriteOptions: rewrites,
         undoStack: currentWorkingText != text ? [text] : [],
       ));
     } catch (e) {

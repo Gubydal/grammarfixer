@@ -487,6 +487,326 @@ class EnglishContextRules {
       confidence: IssueConfidence.high,
       isAutoFixable: true,
     ),
+
+    // ── ESL Preposition Collocations ──
+
+    // "congratulate for/about" → "congratulate on"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(congratulate|congratulated|congratulating)\s+([a-zA-Z]+)\s+(for|about)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(1)!.length + 1 + m.group(2)!.length + 1,
+      targetGroupLength: (m) => m.group(3)!.length,
+      replacement: (m, orig) => 'on',
+      message: 'Preposition: use "congratulate on" rather than "for/about".',
+      shortReason: 'Preposition',
+      category: IssueCategory.wordChoice,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "depends of/from" → "depends on"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(depend|depends|depended|depending)\s+(of|from)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(1)!.length + 1,
+      targetGroupLength: (m) => m.group(2)!.length,
+      replacement: (m, orig) => 'on',
+      message: 'Preposition: use "depend on".',
+      shortReason: 'Preposition',
+      category: IssueCategory.wordChoice,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "married with" → "married to"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(married)\s+(with)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(1)!.length + 1,
+      targetGroupLength: (m) => 4,
+      replacement: (m, orig) => 'to',
+      message: 'Preposition: use "married to".',
+      shortReason: 'Preposition',
+      category: IssueCategory.wordChoice,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "good/bad in" → "good/bad at"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(good|bad|great|terrible|expert|skilled)\s+(in)\s+(math|english|sports|running|coding|writing|cooking|playing|singing|learning|speaking|drawing)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(1)!.length + 1,
+      targetGroupLength: (m) => 2,
+      replacement: (m, orig) => 'at',
+      message: 'Preposition: use "good/bad at" for skills.',
+      shortReason: 'Preposition',
+      category: IssueCategory.wordChoice,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "look forward to + base verb" → "look forward to + gerund (-ing)"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(look|looking|looks|looked)\s+forward\s+to\s+(hear|meet|see|talk|read|work|receive|visit|speak|join)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(0)!.length - m.group(2)!.length,
+      targetGroupLength: (m) => m.group(2)!.length,
+      replacement: (m, orig) {
+        final verb = m.group(2)!.toLowerCase();
+        if (verb == 'hear') return 'hearing';
+        if (verb == 'meet') return 'meeting';
+        if (verb == 'see') return 'seeing';
+        if (verb == 'talk') return 'talking';
+        if (verb == 'read') return 'reading';
+        if (verb == 'work') return 'working';
+        if (verb == 'receive') return 'receiving';
+        if (verb == 'visit') return 'visiting';
+        if (verb == 'speak') return 'speaking';
+        if (verb == 'join') return 'joining';
+        return '${verb}ing';
+      },
+      message: 'Grammar: "look forward to" is followed by a gerund (-ing form).',
+      shortReason: 'Gerund form',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "interested for/about" → "interested in"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(interested)\s+(for|about)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(1)!.length + 1,
+      targetGroupLength: (m) => m.group(2)!.length,
+      replacement: (m, orig) => 'in',
+      message: 'Preposition: use "interested in".',
+      shortReason: 'Preposition',
+      category: IssueCategory.wordChoice,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "responsible of" → "responsible for"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(responsible)\s+(of)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(1)!.length + 1,
+      targetGroupLength: (m) => 2,
+      replacement: (m, orig) => 'for',
+      message: 'Preposition: use "responsible for".',
+      shortReason: 'Preposition',
+      category: IssueCategory.wordChoice,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "go to home" / "come to home" → "go home" / "come home"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(go|goes|went|going|come|comes|came|coming)\s+(to\s+home)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(1)!.length + 1,
+      targetGroupLength: (m) => 7,
+      replacement: (m, orig) => 'home',
+      message: 'Idiom: omit "to" before "home".',
+      shortReason: 'Word choice',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.warning,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "discuss about" → "discuss"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(discuss|discussed|discussing|discusses)\s+(about)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => m.group(1)!.length + 1,
+      targetGroupLength: (m) => 5,
+      replacement: (m, orig) => '',
+      message: 'Redundancy: "discuss" does not take "about".',
+      shortReason: 'Redundancy',
+      category: IssueCategory.clarity,
+      severity: IssueSeverity.warning,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // ── Uncountable Noun Pluralization ──
+
+    // "advices" → "advice"
+    _ContextRule(
+      pattern: RegExp(r'\b(advices)\b', caseSensitive: false),
+      replacement: (m, orig) => _preserveCase(orig, 'advice'),
+      message: '"Advice" is uncountable. Use "advice" or "pieces of advice".',
+      shortReason: 'Uncountable noun',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "informations" → "information"
+    _ContextRule(
+      pattern: RegExp(r'\b(informations)\b', caseSensitive: false),
+      replacement: (m, orig) => _preserveCase(orig, 'information'),
+      message: '"Information" is uncountable. Use "information".',
+      shortReason: 'Uncountable noun',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "equipments" → "equipment"
+    _ContextRule(
+      pattern: RegExp(r'\b(equipments)\b', caseSensitive: false),
+      replacement: (m, orig) => _preserveCase(orig, 'equipment'),
+      message: '"Equipment" is uncountable. Use "equipment".',
+      shortReason: 'Uncountable noun',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "furnitures" → "furniture"
+    _ContextRule(
+      pattern: RegExp(r'\b(furnitures)\b', caseSensitive: false),
+      replacement: (m, orig) => _preserveCase(orig, 'furniture'),
+      message: '"Furniture" is uncountable. Use "furniture".',
+      shortReason: 'Uncountable noun',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "homeworks" → "homework"
+    _ContextRule(
+      pattern: RegExp(r'\b(homeworks)\b', caseSensitive: false),
+      replacement: (m, orig) => _preserveCase(orig, 'homework'),
+      message: '"Homework" is uncountable. Use "homework".',
+      shortReason: 'Uncountable noun',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "feedbacks" → "feedback"
+    _ContextRule(
+      pattern: RegExp(r'\b(feedbacks)\b', caseSensitive: false),
+      replacement: (m, orig) => _preserveCase(orig, 'feedback'),
+      message: '"Feedback" is uncountable. Use "feedback".',
+      shortReason: 'Uncountable noun',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // ── Collocations & Common Verb Confusions ──
+
+    // "make a research / make research" → "do research"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(make|making|made|makes)\s+(a\s+research|research)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => 0,
+      targetGroupLength: (m) => m.group(0)!.length,
+      replacement: (m, orig) {
+        final verb = m.group(1)!.toLowerCase();
+        if (verb == 'made') return 'did research';
+        if (verb == 'making') return 'doing research';
+        if (verb == 'makes') return 'does research';
+        return 'do research';
+      },
+      message: 'Collocation: use "do research" or "conduct research" instead of "make research".',
+      shortReason: 'Collocation',
+      category: IssueCategory.wordChoice,
+      severity: IssueSeverity.warning,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // ── Article Corrections (a vs an phonetic rules) ──
+
+    // "an university/unique/union/user/useful" → "a university/..."
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(an)\s+(university|unique|union|user|useful|uniform|unit|universal|useless)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => 0,
+      targetGroupLength: (m) => 2,
+      replacement: (m, orig) => _preserveCase(orig, 'a'),
+      message: 'Article: use "a" before words starting with a consonant "y" sound.',
+      shortReason: 'Article',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "a hour/honest/honor" → "an hour/..."
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(a)\s+(hour|hours|honest|honor|honour|heir)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => 0,
+      targetGroupLength: (m) => 1,
+      replacement: (m, orig) => _preserveCase(orig, 'an'),
+      message: 'Article: use "an" before words starting with a silent "h".',
+      shortReason: 'Article',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
+
+    // "an European/one" → "a European/one"
+    _ContextRule(
+      pattern: RegExp(
+        r'\b(an)\s+(European|one-time|one-way|one)\b',
+        caseSensitive: false,
+      ),
+      targetGroupStart: (m) => 0,
+      targetGroupLength: (m) => 2,
+      replacement: (m, orig) => _preserveCase(orig, 'a'),
+      message: 'Article: use "a" before consonant sound.',
+      shortReason: 'Article',
+      category: IssueCategory.grammar,
+      severity: IssueSeverity.error,
+      confidence: IssueConfidence.high,
+      isAutoFixable: true,
+    ),
   ];
 
   /// Preserves the case pattern of [original] on [replacement].

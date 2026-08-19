@@ -7,6 +7,7 @@ import '../../../../design/components/app_button.dart';
 import '../../domain/entities/correction_issue.dart';
 import '../cubits/correction_cubit.dart';
 import '../cubits/correction_state.dart';
+import '../widgets/rewrite_cards_view.dart';
 import '../widgets/suggestion_bottom_sheet.dart';
 
 class ReviewModeView extends StatelessWidget {
@@ -131,6 +132,16 @@ class ReviewModeView extends StatelessWidget {
                         ),
                         child: _buildRichReviewText(context),
                       ),
+                      if (state.rewriteOptions.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        RewriteCardsView(
+                          options: state.rewriteOptions,
+                          onApply: (opt) {
+                            cubit.applyRewriteOption(opt);
+                            cubit.backToEdit();
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),

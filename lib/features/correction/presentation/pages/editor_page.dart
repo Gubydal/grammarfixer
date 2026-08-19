@@ -14,6 +14,7 @@ import '../cubits/correction_state.dart';
 import '../cubits/model_pack_cubit.dart';
 import '../widgets/language_selector_sheet.dart';
 import '../widgets/model_pack_download_sheet.dart';
+import '../widgets/rewrite_cards_view.dart';
 import '../widgets/writing_style_sheet.dart';
 import 'review_mode_view.dart';
 
@@ -56,7 +57,7 @@ class _EditorPageState extends State<EditorPage> {
       FormalityStyle.casual => 'Casual',
       FormalityStyle.neutral => 'Natural',
     };
-    return '$formalityName · ${profile.dialect.displayName}';
+    return '$formalityName (${profile.dialect.displayName.split(' ').first})';
   }
 
   @override
@@ -90,6 +91,7 @@ class _EditorPageState extends State<EditorPage> {
         final currentMode = isEditingState ? state.mode : CorrectionMode.correct;
         final isRtl = isEditingState ? state.isRtl : false;
         final liveIssues = isEditingState ? state.liveIssues : [];
+        final rewriteOptions = isEditingState ? state.rewriteOptions : [];
         final lastAutoFix = isEditingState ? state.lastAutoFix : null;
         final isLiveChecking = isEditingState ? state.isLiveChecking : false;
 
@@ -189,7 +191,7 @@ class _EditorPageState extends State<EditorPage> {
             body: SafeArea(
               child: Column(
                 children: [
-                  // Mode Selector Header & Personal Style Indicator
+                  // Clean Segmented Toolbar (0% overflow guaranteed)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
                     child: Row(
@@ -219,42 +221,48 @@ class _EditorPageState extends State<EditorPage> {
                           ),
                         ),
                         const Spacer(),
-                        // Personal Style Indicator Chip (Tappable for full customization)
-                        GestureDetector(
-                          onTap: () async {
-                            await WritingStyleSheet.show(context, personalStyleRepo: personalStyleRepo);
-                            if (context.mounted) {
-                              setState(() {});
-                              context.read<CorrectionCubit>().updateText(_textController.text);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.darkSurfaceGreen : AppColors.primarySoft,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isDark ? AppColors.darkPrimary.withValues(alpha: 0.3) : AppColors.primary.withValues(alpha: 0.2),
+                        // Compact Style Button (Wrapped in Flexible to prevent overflow)
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: () async {
+                              await WritingStyleSheet.show(context, personalStyleRepo: personalStyleRepo);
+                              if (context.mounted) {
+                                setState(() {});
+                                context.read<CorrectionCubit>().updateText(_textController.text);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isDark ? AppColors.darkSurfaceGreen : AppColors.primarySoft,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isDark ? AppColors.darkPrimary.withValues(alpha: 0.3) : AppColors.primary.withValues(alpha: 0.2),
+                                ),
                               ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Style: ${_getStyleSummary(styleProfile)}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      _getStyleSummary(styleProfile),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.tune,
+                                    size: 13,
                                     color: isDark ? AppColors.darkPrimary : AppColors.primary,
                                   ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.tune,
-                                  size: 13,
-                                  color: isDark ? AppColors.darkPrimary : AppColors.primary,
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -327,140 +335,157 @@ class _EditorPageState extends State<EditorPage> {
                     ),
 
                   Expanded(
-                    child: Padding(
+                    child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: surfaceColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            // Text input area
-                            Expanded(
-                              child: TextField(
-                                controller: _textController,
-                                focusNode: _focusNode,
-                                maxLines: null,
-                                expands: true,
-                                textAlignVertical: TextAlignVertical.top,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: textPrimary,
-                                  fontSize: 16,
-                                  height: 1.5,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: currentMode == CorrectionMode.correct
-                                      ? 'Paste or type text to fix grammar, typos, and punctuation…'
-                                      : 'Paste or type text to polish phrasing and enhance style…',
-                                  hintStyle: TextStyle(
-                                    color: textSecondary.withValues(alpha: 0.6),
-                                    fontSize: 15,
-                                  ),
-                                  filled: false,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: const EdgeInsets.all(16),
-                                ),
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 220,
+                            decoration: BoxDecoration(
+                              color: surfaceColor,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
                               ),
                             ),
-                            // Live issue indicator strip (shown when there are unfixed live issues)
-                            if (liveIssues.isNotEmpty && lastAutoFix == null)
-                              _buildLiveIssueStrip(liveIssues, isDark, textPrimary),
-                            // Quick Action Toolbar
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: surfaceSoft,
-                                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
-                              ),
-                              child: Row(
-                                children: [
-                                  // Smart Paste Button
-                                  InkWell(
-                                    borderRadius: BorderRadius.circular(8),
-                                    onTap: () async {
-                                      final data = await Clipboard.getData(Clipboard.kTextPlain);
-                                      if (data?.text != null && context.mounted) {
-                                        context.read<CorrectionCubit>().pasteText(data!.text!);
-                                      }
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                      child: Row(
-                                        children: [
-                                          const AppIcon(AppIcons.copy, size: 16),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Paste',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: textPrimary,
+                            child: Column(
+                              children: [
+                                // Text input area
+                                Expanded(
+                                  child: TextField(
+                                    controller: _textController,
+                                    focusNode: _focusNode,
+                                    maxLines: null,
+                                    expands: true,
+                                    textAlignVertical: TextAlignVertical.top,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: textPrimary,
+                                      fontSize: 16,
+                                      height: 1.5,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: currentMode == CorrectionMode.correct
+                                          ? 'Paste or type text to fix grammar, typos, and punctuation…'
+                                          : 'Paste or type text to polish phrasing and enhance style…',
+                                      hintStyle: TextStyle(
+                                        color: textSecondary.withValues(alpha: 0.6),
+                                        fontSize: 15,
+                                      ),
+                                      filled: false,
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      contentPadding: const EdgeInsets.all(16),
+                                    ),
+                                  ),
+                                ),
+                                // Live issue indicator strip (shown when there are unfixed live issues)
+                                if (liveIssues.isNotEmpty && lastAutoFix == null)
+                                  _buildLiveIssueStrip(liveIssues, isDark, textPrimary),
+                                // Quick Action Toolbar
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: surfaceSoft,
+                                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      // Smart Paste Button
+                                      InkWell(
+                                        borderRadius: BorderRadius.circular(8),
+                                        onTap: () async {
+                                          final data = await Clipboard.getData(Clipboard.kTextPlain);
+                                          if (data?.text != null && context.mounted) {
+                                            context.read<CorrectionCubit>().pasteText(data!.text!);
+                                          }
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                          child: Row(
+                                            children: [
+                                              const AppIcon(AppIcons.copy, size: 16),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                'Paste',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: textPrimary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      if (currentText.isNotEmpty) ...[
+                                        const SizedBox(width: 8),
+                                        InkWell(
+                                          borderRadius: BorderRadius.circular(8),
+                                          onTap: () => context.read<CorrectionCubit>().clearText(),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                            child: Row(
+                                              children: [
+                                                const AppIcon(AppIcons.trash, size: 16),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  'Clear',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: textSecondary,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  if (currentText.isNotEmpty) ...[
-                                    const SizedBox(width: 8),
-                                    InkWell(
-                                      borderRadius: BorderRadius.circular(8),
-                                      onTap: () => context.read<CorrectionCubit>().clearText(),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                        child: Row(
-                                          children: [
-                                            const AppIcon(AppIcons.trash, size: 16),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              'Clear',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: textSecondary,
-                                              ),
+                                        ),
+                                      ],
+                                      const Spacer(),
+                                      // Live checking indicator
+                                      if (isLiveChecking)
+                                        Padding(
+                                          padding: const EdgeInsets.only(right: 8),
+                                          child: SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 1.5,
+                                              color: isDark ? AppColors.darkPrimary : AppColors.primary,
                                             ),
-                                          ],
+                                          ),
+                                        ),
+                                      Text(
+                                        '${currentText.length} chars · ${currentText.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length} words',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: textSecondary,
+                                          fontWeight: FontWeight.w400,
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                  const Spacer(),
-                                  // Live checking indicator
-                                  if (isLiveChecking)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: SizedBox(
-                                        width: 12,
-                                        height: 12,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 1.5,
-                                          color: isDark ? AppColors.darkPrimary : AppColors.primary,
-                                        ),
-                                      ),
-                                    ),
-                                  Text(
-                                    '${currentText.length} chars · ${currentText.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length} words',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: textSecondary,
-                                      fontWeight: FontWeight.w400,
-                                    ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Multi-Option Rewrite Cards in Improve Mode
+                          if (currentMode == CorrectionMode.improve && rewriteOptions.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            RewriteCardsView(
+                              options: rewriteOptions.cast(),
+                              onApply: (opt) {
+                                context.read<CorrectionCubit>().applyRewriteOption(opt);
+                              },
                             ),
                           ],
-                        ),
+                        ],
                       ),
                     ),
                   ),
+
                   // Auto-Fix Explanation Bar (shown after auto-fix is applied)
                   if (lastAutoFix != null)
                     _buildAutoFixBar(lastAutoFix, isDark),
