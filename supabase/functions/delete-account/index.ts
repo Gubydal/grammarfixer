@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  let schema = "app_starter";
+  let schema = "app_grammarfix";
   try {
     const body = await req.json();
     schema = typeof body?.schema === "string" ? body.schema : schema;

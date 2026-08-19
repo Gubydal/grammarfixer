@@ -1,4 +1,4 @@
-import 'package:app_starter/core/config/app_legal_urls.dart';
+import 'package:grammarfix/core/config/app_legal_urls.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

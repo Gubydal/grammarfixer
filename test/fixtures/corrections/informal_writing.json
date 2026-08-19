@@ -1,0 +1,23 @@
+[
+  {
+    "id": "inf_slang_01",
+    "input": "lol idk what gonna happen, but I recieved teh message 😊",
+    "language": "en",
+    "required_edits": [
+      { "original": "recieved", "replacement": "received" },
+      { "original": "teh", "replacement": "the" }
+    ],
+    "forbidden_edits": ["lol", "idk", "gonna", "😊"],
+    "category": "informal"
+  },
+  {
+    "id": "inf_casual_02",
+    "input": "omg btw we wanna leave becuase it is late 🔥",
+    "language": "en",
+    "required_edits": [
+      { "original": "becuase", "replacement": "because" }
+    ],
+    "forbidden_edits": ["omg", "btw", "wanna", "🔥"],
+    "category": "informal"
+  }
+]

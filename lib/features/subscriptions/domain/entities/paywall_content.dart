@@ -34,11 +34,11 @@ class PaywallContent {
   factory PaywallContent.forApp(String appName) {
     return PaywallContent(
       title: '$appName Pro',
-      subtitle: 'Unlock the full power of $appName.',
+      subtitle: 'Enjoy a completely ad-free, uninterrupted writing experience.',
       benefits: const [
-        'No ads',
-        'Premium features',
-        'Future feature access',
+        '100% Ad-free experience',
+        'Support independent, privacy-first software',
+        'Fast & uninterrupted corrections everywhere',
       ],
     );
   }

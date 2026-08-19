@@ -1,0 +1,23 @@
+[
+  {
+    "id": "wb_joined_01",
+    "input": "I like this alot inthe morning.",
+    "language": "en",
+    "required_edits": [
+      { "original": "alot", "replacement": "a lot" },
+      { "original": "inthe", "replacement": "in the" }
+    ],
+    "forbidden_edits": ["morning"],
+    "category": "word_boundary"
+  },
+  {
+    "id": "wb_split_02",
+    "input": "There is some thing in the box.",
+    "language": "en",
+    "required_edits": [
+      { "original": "some thing", "replacement": "something" }
+    ],
+    "forbidden_edits": ["There", "box"],
+    "category": "word_boundary"
+  }
+]

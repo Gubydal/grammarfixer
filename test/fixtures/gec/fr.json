@@ -1,0 +1,37 @@
+[
+  {
+    "id": "fr_agr_01",
+    "input": "Les chat sont adorables.",
+    "acceptedOutputs": ["Les chats sont adorables."],
+    "category": "number agreement",
+    "notes": "Plural noun agreement"
+  },
+  {
+    "id": "fr_verb_01",
+    "input": "Ils mange une pomme.",
+    "acceptedOutputs": ["Ils mangent une pomme."],
+    "category": "verb form",
+    "notes": "Third-person plural verb ending"
+  },
+  {
+    "id": "fr_gend_01",
+    "input": "Le maison est grande.",
+    "acceptedOutputs": ["La maison est grande."],
+    "category": "gender agreement",
+    "notes": "Feminine noun article"
+  },
+  {
+    "id": "fr_accent_01",
+    "input": "A bientôt pour la réunion.",
+    "acceptedOutputs": ["À bientôt pour la réunion."],
+    "category": "accent",
+    "notes": "Preposition grave accent"
+  },
+  {
+    "id": "fr_clean_01",
+    "input": "Le soleil brille dans le ciel bleu.",
+    "acceptedOutputs": ["Le soleil brille dans le ciel bleu."],
+    "category": "already correct",
+    "notes": "Preserve already correct French"
+  }
+]

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_spacing.dart';
 
 class LoadingStateView extends StatelessWidget {
-  const LoadingStateView({super.key, this.message = 'Loading…'});
+  const LoadingStateView({super.key, this.message = 'Loadingâ€¦'});
 
   final String message;
 

@@ -1,97 +1,113 @@
-import 'package:app_starter/features/auth/domain/entities/app_user.dart';
-import 'package:app_starter/features/auth/presentation/cubits/auth_cubit.dart';
-import 'package:app_starter/features/shell/presentation/main_shell.dart';
-import 'package:app_starter/features/subscriptions/presentation/cubits/offerings_cubit.dart';
-import 'package:app_starter/features/subscriptions/presentation/cubits/subscription_cubit.dart';
-import 'package:app_starter/design/components/app_bottom_bar.dart';
-import 'package:app_starter/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grammarfix/design/components/app_bottom_bar.dart';
+import 'package:grammarfix/features/correction/data/repositories/correction_repository.dart';
+import 'package:grammarfix/features/correction/data/repositories/custom_dictionary_repository.dart';
+import 'package:grammarfix/features/correction/data/repositories/draft_repository.dart';
+import 'package:grammarfix/features/correction/data/repositories/model_pack_repository.dart';
+import 'package:grammarfix/features/correction/data/repositories/personal_style_repository.dart';
+import 'package:grammarfix/features/correction/domain/services/harper_engine.dart';
+import 'package:grammarfix/features/correction/domain/services/language_detector.dart';
+import 'package:grammarfix/features/correction/domain/services/multilingual_engine.dart';
+import 'package:grammarfix/features/correction/presentation/cubits/correction_cubit.dart';
+import 'package:grammarfix/features/correction/presentation/cubits/custom_dictionary_cubit.dart';
+import 'package:grammarfix/features/correction/presentation/cubits/model_pack_cubit.dart';
+import 'package:grammarfix/features/shell/presentation/main_shell.dart';
+import 'package:grammarfix/features/subscriptions/presentation/cubits/offerings_cubit.dart';
+import 'package:grammarfix/features/subscriptions/presentation/cubits/subscription_cubit.dart';
+import 'package:grammarfix/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'fakes/fake_auth_repo.dart';
+Widget _wrap(SharedPreferences prefs) {
+  final modelPackRepo = ModelPackRepository(prefs: prefs);
+  final draftRepo = DraftRepository(prefs: prefs);
+  final dictionaryRepo = CustomDictionaryRepository(prefs: prefs);
+  final personalStyleRepo = PersonalStyleRepository(prefs);
+  final correctionRepo = CorrectionRepository(
+    harperEngine: HarperEngine(),
+    multilingualEngine: MultilingualEngine(),
+    languageDetector: const LanguageDetector(),
+    customDictionaryRepo: dictionaryRepo,
+    modelPackRepo: modelPackRepo,
+    personalStyleRepo: personalStyleRepo,
+  );
 
-Widget _wrap() {
-  final authCubit = AuthCubit(
-    authRepo: FakeAuthRepo()
-      ..currentUser = AppUser(
-        uid: '1',
-        email: 'user@example.com',
-        displayName: 'Test User',
-      ),
-  )..checkAuth();
-  final subscriptionCubit = SubscriptionCubit(
-    attachRevenueCatListener: false,
-    isProCheck: () async => true,
-  )..checkProStatus();
-  final offeringsCubit = OfferingsCubit(fetchOfferings: () async => null);
-
-  return MultiBlocProvider(
+  return MultiRepositoryProvider(
     providers: [
-      BlocProvider<AuthCubit>(create: (_) => authCubit),
-      BlocProvider<SubscriptionCubit>(create: (_) => subscriptionCubit),
-      BlocProvider<OfferingsCubit>(create: (_) => offeringsCubit),
+      RepositoryProvider.value(value: correctionRepo),
+      RepositoryProvider.value(value: modelPackRepo),
+      RepositoryProvider.value(value: draftRepo),
+      RepositoryProvider.value(value: dictionaryRepo),
+      RepositoryProvider.value(value: personalStyleRepo),
     ],
-    child: MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: const MainShell(),
+    child: MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => CorrectionCubit(
+            repository: correctionRepo,
+            modelPackRepository: modelPackRepo,
+            draftRepository: draftRepo,
+            personalStyleRepository: personalStyleRepo,
+          ),
+        ),
+        BlocProvider(create: (_) => ModelPackCubit(repository: modelPackRepo)),
+        BlocProvider(create: (_) => CustomDictionaryCubit(repository: dictionaryRepo)),
+        BlocProvider(create: (_) => SubscriptionCubit(forcePro: true)),
+        BlocProvider(create: (_) => OfferingsCubit()),
+      ],
+      child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MainShell(),
+      ),
     ),
   );
 }
 
 void main() {
-  testWidgets('paints the floating bottom bar and home content', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(800, 1800);
+  testWidgets('paints the floating bottom bar and correct tab', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(_wrap());
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(_wrap(prefs));
     await tester.pumpAndSettle();
 
     expect(find.byType(AppBottomBar), findsOneWidget);
-    expect(find.textContaining('Welcome to'), findsOneWidget);
-    expect(find.text('You are Pro'), findsOneWidget);
+    expect(find.text('GrammarFix'), findsOneWidget);
+    expect(find.text('Paste or type text to fix grammar, typos, and punctuation…'), findsOneWidget);
   });
 
-  testWidgets('navigates between tabs', (tester) async {
-    tester.view.physicalSize = const Size(800, 1800);
+  testWidgets('switching tabs switches screens correctly', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(_wrap());
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(_wrap(prefs));
     await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AppBottomBar),
-        matching: find.bySemanticsLabel('Profile'),
-      ),
-    );
+    // Click Settings tab via semantics label
+    final settingsDestination = find.bySemanticsLabel('Settings');
+    expect(settingsDestination, findsOneWidget);
+    await tester.tap(settingsDestination);
     await tester.pumpAndSettle();
-    expect(find.text('Test User'), findsOneWidget);
 
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AppBottomBar),
-        matching: find.bySemanticsLabel('Settings'),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Send Feedback'), findsOneWidget);
+    expect(find.text('WRITING'), findsOneWidget);
+    expect(find.text('English Variant'), findsOneWidget);
 
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AppBottomBar),
-        matching: find.bySemanticsLabel('Upgrade'),
-      ),
-    );
+    // Click Correct tab via semantics label
+    final correctDestination = find.bySemanticsLabel('Correct');
+    expect(correctDestination, findsOneWidget);
+    await tester.tap(correctDestination);
     await tester.pumpAndSettle();
-    expect(
-      find.text('Configure an offering in RevenueCat to enable Pro.'),
-      findsOneWidget,
-    );
+
+    expect(find.text('GrammarFix'), findsOneWidget);
   });
 }

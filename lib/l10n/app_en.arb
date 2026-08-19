@@ -1,8 +1,8 @@
 {
   "@@locale": "en",
 
-  "appName": "App Starter",
-  "home": "Home",
+  "appName": "GrammarFix",
+  "home": "Correct",
   "profile": "Profile",
   "settings": "Settings",
   "upgrade": "Upgrade",

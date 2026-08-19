@@ -1,0 +1,30 @@
+[
+  {
+    "id": "it_agr_01",
+    "input": "I gatto giocano nel salone.",
+    "acceptedOutputs": ["I gatti giocano nel salone."],
+    "category": "number agreement",
+    "notes": "Plural masculine noun"
+  },
+  {
+    "id": "it_verb_01",
+    "input": "Loro va a Roma domani.",
+    "acceptedOutputs": ["Loro vanno a Roma domani."],
+    "category": "verb agreement",
+    "notes": "Third-person plural verb form"
+  },
+  {
+    "id": "it_apost_01",
+    "input": "Lei è un amica speciale.",
+    "acceptedOutputs": ["Lei è un'amica speciale."],
+    "category": "elision/apostrophe",
+    "notes": "Feminine indefinite article with vowel"
+  },
+  {
+    "id": "it_clean_01",
+    "input": "La pizza margherita è deliziosa.",
+    "acceptedOutputs": ["La pizza margherita è deliziosa."],
+    "category": "already correct",
+    "notes": "Preserve already correct Italian"
+  }
+]

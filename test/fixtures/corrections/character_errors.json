@@ -1,0 +1,43 @@
+[
+  {
+    "id": "char_typo_01",
+    "input": "I recieved teh email yesterday.",
+    "language": "en",
+    "required_edits": [
+      { "original": "recieved", "replacement": "received" },
+      { "original": "teh", "replacement": "the" }
+    ],
+    "forbidden_edits": ["yesterday"],
+    "category": "spelling"
+  },
+  {
+    "id": "char_transposition_02",
+    "input": "Thsi happens becuase of a small bug.",
+    "language": "en",
+    "required_edits": [
+      { "original": "Thsi", "replacement": "This" },
+      { "original": "becuase", "replacement": "because" }
+    ],
+    "forbidden_edits": ["small", "bug"],
+    "category": "spelling"
+  },
+  {
+    "id": "char_repeated_03",
+    "input": "Hellooooo world, whatt are you doing?",
+    "language": "en",
+    "required_edits": [
+      { "original": "Hellooooo", "replacement": "Hello" },
+      { "original": "whatt", "replacement": "what" }
+    ],
+    "forbidden_edits": ["world"],
+    "category": "spelling"
+  },
+  {
+    "id": "char_valid_repeats_04",
+    "input": "The bookkeeper served coffee to the committee.",
+    "language": "en",
+    "required_edits": [],
+    "forbidden_edits": ["bookkeeper", "coffee", "committee"],
+    "category": "already correct"
+  }
+]

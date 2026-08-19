@@ -29,7 +29,7 @@ class AppLogo extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [scheme.primary, AppColors.primaryDark],
+          colors: [scheme.primary, AppColors.primaryPressed],
         ),
         borderRadius: BorderRadius.circular(size * 0.28),
         boxShadow: [

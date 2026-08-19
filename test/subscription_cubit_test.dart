@@ -1,5 +1,5 @@
-import 'package:app_starter/features/subscriptions/presentation/cubits/subscription_cubit.dart';
-import 'package:app_starter/features/subscriptions/presentation/cubits/subscription_states.dart';
+import 'package:grammarfix/features/subscriptions/presentation/cubits/subscription_cubit.dart';
+import 'package:grammarfix/features/subscriptions/presentation/cubits/subscription_states.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

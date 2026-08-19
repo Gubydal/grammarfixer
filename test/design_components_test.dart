@@ -1,7 +1,7 @@
-import 'package:app_starter/design/components/app_bottom_bar.dart';
-import 'package:app_starter/design/components/app_button.dart';
-import 'package:app_starter/design/components/app_state_view.dart';
-import 'package:app_starter/design/components/app_text_field.dart';
+import 'package:grammarfix/design/components/app_bottom_bar.dart';
+import 'package:grammarfix/design/components/app_button.dart';
+import 'package:grammarfix/design/components/app_state_view.dart';
+import 'package:grammarfix/design/components/app_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

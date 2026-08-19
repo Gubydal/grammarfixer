@@ -10,17 +10,17 @@ class AppConfig {
 
   static const String appName = String.fromEnvironment(
     'APP_NAME',
-    defaultValue: 'App Starter',
+    defaultValue: 'GrammarFix',
   );
 
   static const String appSlug = String.fromEnvironment(
     'APP_SLUG',
-    defaultValue: 'starter',
+    defaultValue: 'grammar-fix',
   );
 
   static const String applicationId = String.fromEnvironment(
     'APPLICATION_ID',
-    defaultValue: 'com.mo.starter',
+    defaultValue: 'com.mogate.grammarfix',
   );
 
   static const String supabaseUrl = String.fromEnvironment(
@@ -35,12 +35,12 @@ class AppConfig {
 
   static const String supabaseSchema = String.fromEnvironment(
     'SUPABASE_SCHEMA',
-    defaultValue: 'app_starter',
+    defaultValue: 'app_grammar_fix',
   );
 
   static const String deepLinkScheme = String.fromEnvironment(
     'DEEP_LINK_SCHEME',
-    defaultValue: 'com.mo.starter',
+    defaultValue: 'com.mogate.grammarfix',
   );
 
   static const String deepLinkHost = 'callback';

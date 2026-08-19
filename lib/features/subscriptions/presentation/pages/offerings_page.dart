@@ -118,7 +118,7 @@ class _PaywallViewState extends State<PaywallView> {
           },
           builder: (context, state) {
             if (state is OfferingsLoading || state is OfferingsInitial) {
-              return const LoadingStateView(message: 'Loading offers…');
+              return const LoadingStateView(message: 'Loading offersâ€¦');
             }
             if (state is OfferingsError) {
               return _ErrorOffers(
@@ -211,7 +211,7 @@ class _PaywallViewState extends State<PaywallView> {
                         child: Text(
                           _selected == null
                               ? l10n.subscribe
-                              : '${_content.primaryCtaLabel ?? l10n.startPro} — '
+                              : '${_content.primaryCtaLabel ?? l10n.startPro} â€” '
                                     '${_selected!.storeProduct.priceString}',
                         ),
                       ),

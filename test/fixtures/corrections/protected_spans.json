@@ -1,0 +1,34 @@
+[
+  {
+    "id": "prot_email_url_01",
+    "input": "Email John at john@example.com becuase teh build failed.",
+    "language": "en",
+    "required_edits": [
+      { "original": "becuase", "replacement": "because" },
+      { "original": "teh", "replacement": "the" }
+    ],
+    "forbidden_edits": ["John", "john@example.com"],
+    "category": "spelling"
+  },
+  {
+    "id": "prot_code_url_02",
+    "input": "Check `const x = 10;` at https://github.com/mogate/app becuase it is broken.",
+    "language": "en",
+    "required_edits": [
+      { "original": "becuase", "replacement": "because" }
+    ],
+    "forbidden_edits": ["`const x = 10;`", "https://github.com/mogate/app"],
+    "category": "spelling"
+  },
+  {
+    "id": "prot_hashtag_username_03",
+    "input": "Follow @mogate_tech and check #GrammarFix becuase teh release is live.",
+    "language": "en",
+    "required_edits": [
+      { "original": "becuase", "replacement": "because" },
+      { "original": "teh", "replacement": "the" }
+    ],
+    "forbidden_edits": ["@mogate_tech", "#GrammarFix"],
+    "category": "spelling"
+  }
+]

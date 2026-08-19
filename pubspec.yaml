@@ -1,5 +1,5 @@
-name: app_starter
-description: "Production-ready Android Flutter starter with Supabase auth, RevenueCat, AdMob, a reusable design system, and Google Play readiness."
+name: grammarfix
+description: "GrammarFix - Simple, privacy-first on-device grammar and spelling corrector for Android."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -25,6 +25,7 @@ dependencies:
   url_launcher: ^6.3.2
   shared_preferences: ^2.5.3
   flutter_svg: ^2.3.0
+  ffi: ^2.1.3
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,4 @@
-import 'package:app_starter/features/ads/data/ad_service.dart';
+import 'package:grammarfix/features/ads/data/ad_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

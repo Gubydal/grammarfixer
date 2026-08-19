@@ -1,39 +1,44 @@
-# Google Play Listing (Template Placeholder)
+# Google Play Store Listing — GrammarFix
 
-> This is a placeholder guide. Every generated app creates its own
-> app-specific listing content under `docs/store/`.
+**Package Name**: `com.mogate.grammarfix`  
+**Category**: Productivity / Tools  
+**Default Language**: English (United States)
 
-## App title
+---
 
-Keep under 30 characters and make the core value obvious. Do not imply
-affiliation with platforms you do not control.
+## Short Description (80 chars max)
+Privacy-first on-device grammar & spell checker. Fix writing anywhere on Android.
 
-## Short description (80 characters)
+---
 
-One sentence: who it is for and the single most valuable action.
+## Full Description (4000 chars max)
 
-## Long description
+Fix your grammar, spelling, and phrasing instantly with **GrammarFix** — the privacy-first on-device writing assistant for Android.
 
-- Hook: the user's problem in one line.
-- How it works: 2-4 numbered steps.
-- Feature highlights: short bullets.
-- Pro section: ad-free + premium features.
-- Privacy note matching the real data flows.
+### 🔒 100% On-Device Privacy
+Your writing is private. Unlike cloud-based grammar apps that send everything you type to remote servers, GrammarFix runs cutting-edge neural models and grammar engines directly on your phone.
+- No text uploaded to the cloud
+- No AI data harvesting
+- No account or sign-in required
 
-## Data Safety
+### ✍️ Works Anywhere in Android (Process Text Integration)
+Select text in any app (WhatsApp, Gmail, Notes, Browser, Slack) and tap **"Fix grammar"** to inspect and replace errors instantly without switching apps.
 
-Complete the Play Console Data Safety form from the actual implementation:
+### 🌐 Multilingual Correction
+Supported offline languages:
+- **English** (US, UK, CA, AU dialects via high-speed Harper engine)
+- **Arabic (العربية)** with native Right-to-Left formatting
+- **French (Français)**
+- **Spanish (Español)**
+- **German (Deutsch)**
+- **Portuguese (Português)**
+- **Italian (Italiano)**
 
-- Supabase: account email, profile, feedback (user-provided).
-- Google Sign-In: account identifiers.
-- RevenueCat: purchase/subscription state.
-- AdMob: ad identifiers, advertising for free users.
+### ⚡ Key Features:
+- **Visual Diff Highlights**: Color-coded cards show exactly what changed and why.
+- **One-Tap Fix All**: Apply all suggested improvements in a fraction of a second.
+- **Custom Dictionary**: Whitelist your brand names, technical jargon, and family names.
+- **Offline Reliability**: Works in airplane mode, in remote areas, and without Wi-Fi.
+- **Ad-Free Option**: Optional Pro membership removes ads while keeping all correction features free and local for everyone.
 
-## Screenshots
-
-Capture real screens: auth, home, main feature, paywall. Use the app's real
-font/locale. Caption each screenshot with the benefit.
-
-## Release notes
-
-Plain language, one or two sentences, no marketing filler.
+Write with confidence and total privacy. Download GrammarFix today!

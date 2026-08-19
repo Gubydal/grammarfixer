@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:app_starter/features/subscriptions/presentation/cubits/offerings_cubit.dart';
-import 'package:app_starter/features/subscriptions/presentation/cubits/subscription_cubit.dart';
-import 'package:app_starter/features/subscriptions/presentation/pages/offerings_page.dart';
-import 'package:app_starter/l10n/app_localizations.dart';
+import 'package:grammarfix/features/subscriptions/presentation/cubits/offerings_cubit.dart';
+import 'package:grammarfix/features/subscriptions/presentation/cubits/subscription_cubit.dart';
+import 'package:grammarfix/features/subscriptions/presentation/pages/offerings_page.dart';
+import 'package:grammarfix/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -115,7 +115,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Loading offers…'), findsOneWidget);
+    expect(find.text('Loading offersâ€¦'), findsOneWidget);
     completer.complete(null);
     await tester.pumpAndSettle();
   });

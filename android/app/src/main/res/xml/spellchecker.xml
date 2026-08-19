@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<spell-checker xmlns:android="http://schemas.android.com/apk/res/android"
+    android:label="GrammarFix On-Device Checker"
+    android:settingsActivity="com.mogate.grammarfix.MainActivity">
+    <subtype
+        android:label="English (GrammarFix)"
+        android:subtypeLocale="en" />
+    <subtype
+        android:label="Arabic (GrammarFix)"
+        android:subtypeLocale="ar" />
+</spell-checker>

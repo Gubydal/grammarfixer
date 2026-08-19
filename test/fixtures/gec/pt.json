@@ -1,0 +1,30 @@
+[
+  {
+    "id": "pt_agr_01",
+    "input": "Os menino estão felizes hoje.",
+    "acceptedOutputs": ["Os meninos estão felizes hoje."],
+    "category": "number agreement",
+    "notes": "Plural noun agreement"
+  },
+  {
+    "id": "pt_verb_01",
+    "input": "Eles vai ao mercado amanhã.",
+    "acceptedOutputs": ["Eles vão ao mercado amanhã."],
+    "category": "verb agreement",
+    "notes": "Third-person plural verb agreement"
+  },
+  {
+    "id": "pt_gend_01",
+    "input": "Eu comprei um casa nova.",
+    "acceptedOutputs": ["Eu comprei uma casa nova."],
+    "category": "gender agreement",
+    "notes": "Feminine noun indefinite article"
+  },
+  {
+    "id": "pt_clean_01",
+    "input": "O café da manhã está pronto.",
+    "acceptedOutputs": ["O café da manhã está pronto."],
+    "category": "already correct",
+    "notes": "Preserve already correct Portuguese"
+  }
+]

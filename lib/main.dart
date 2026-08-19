@@ -4,79 +4,135 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/config/app_config.dart';
 import 'core/config/secure_local_storage.dart';
-import 'core/navigation/app_navigator.dart';
 import 'core/services/play_services.dart';
 import 'design/app_theme.dart';
 import 'features/ads/data/ad_service.dart';
-import 'features/auth/data/supabase_auth_repo.dart';
-import 'features/auth/presentation/cubits/auth_cubit.dart';
-import 'features/auth/presentation/cubits/auth_states.dart';
-import 'features/auth/presentation/pages/auth_page.dart';
-import 'features/auth/presentation/pages/reset_password_page.dart';
+import 'features/correction/data/repositories/correction_repository.dart';
+import 'features/correction/data/repositories/custom_dictionary_repository.dart';
+import 'features/correction/data/repositories/draft_repository.dart';
+import 'features/correction/data/repositories/model_pack_repository.dart';
+import 'features/correction/data/repositories/personal_style_repository.dart';
+import 'features/correction/domain/services/harper_engine.dart';
+import 'features/correction/domain/services/language_detector.dart';
+import 'features/correction/domain/services/multilingual_engine.dart';
+import 'features/correction/domain/services/typo_candidate_engine.dart';
+import 'features/correction/presentation/cubits/correction_cubit.dart';
+import 'features/correction/presentation/cubits/custom_dictionary_cubit.dart';
+import 'features/correction/presentation/cubits/model_pack_cubit.dart';
+import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/shell/presentation/main_shell.dart';
 import 'features/subscriptions/data/revenuecat_service.dart';
 import 'features/subscriptions/presentation/cubits/offerings_cubit.dart';
 import 'features/subscriptions/presentation/cubits/subscription_cubit.dart';
-import 'features/subscriptions/presentation/cubits/subscription_states.dart';
 import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: AppConfig.supabaseUrl,
-    publishableKey: AppConfig.supabaseAnonKey,
-    authOptions: FlutterAuthClientOptions(
-      localStorage: SecureLocalStorage(const FlutterSecureStorage()),
-    ),
+  final prefs = await SharedPreferences.getInstance();
+
+  try {
+    await Supabase.initialize(
+      url: AppConfig.supabaseUrl,
+      publishableKey: AppConfig.supabaseAnonKey,
+      authOptions: FlutterAuthClientOptions(
+        localStorage: SecureLocalStorage(const FlutterSecureStorage()),
+      ),
+    );
+  } catch (_) {
+    // App operates 100% offline without Supabase
+  }
+
+  try {
+    await RevenuecatService.configureRevenueCat(AppConfig.revenueCatApiKey);
+  } catch (_) {}
+
+  try {
+    await AdService.instance.initialize();
+  } catch (_) {}
+
+  // Domain Services & Repositories
+  final harperEngine = HarperEngine();
+  final multilingualEngine = MultilingualEngine();
+  final typoEngine = TypoCandidateEngine();
+  const languageDetector = LanguageDetector();
+
+  final customDictionaryRepo = CustomDictionaryRepository(prefs: prefs);
+  final draftRepo = DraftRepository(prefs: prefs);
+  final modelPackRepo = ModelPackRepository(prefs: prefs);
+  final personalStyleRepo = PersonalStyleRepository(prefs);
+
+  final correctionRepo = CorrectionRepository(
+    harperEngine: harperEngine,
+    multilingualEngine: multilingualEngine,
+    languageDetector: languageDetector,
+    customDictionaryRepo: customDictionaryRepo,
+    modelPackRepo: modelPackRepo,
+    personalStyleRepo: personalStyleRepo,
+    typoCandidateEngine: typoEngine,
   );
 
-  await RevenuecatService.configureRevenueCat(AppConfig.revenueCatApiKey);
-  await AdService.instance.initialize();
+  final onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
 
-  // Supabase emits this event when the user opens the password-reset deep link.
-  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-    if (data.event == AuthChangeEvent.passwordRecovery) {
-      appNavigatorKey.currentState?.push(
-        MaterialPageRoute<void>(
-          builder: (_) => const ResetPasswordPage(),
-        ),
-      );
-    }
-  });
-
-  // Replace Flutter's opaque gray error surface with a readable message so
-  // unexpected build errors are visible instead of a blank screen.
   ErrorWidget.builder = (details) {
     return Material(
-      color: const Color(0xFFFDF7F7),
+      color: const Color(0xFFF8FBF8),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
             'Something went wrong.\n\n${details.exception}',
             textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF17231B)),
           ),
         ),
       ),
     );
   };
 
-  runApp(const App());
+  runApp(
+    GrammarFixApp(
+      prefs: prefs,
+      correctionRepo: correctionRepo,
+      customDictionaryRepo: customDictionaryRepo,
+      draftRepo: draftRepo,
+      modelPackRepo: modelPackRepo,
+      personalStyleRepo: personalStyleRepo,
+      onboardingCompleted: onboardingCompleted,
+    ),
+  );
 }
 
-class App extends StatefulWidget {
-  const App({super.key});
+class GrammarFixApp extends StatefulWidget {
+  const GrammarFixApp({
+    super.key,
+    required this.prefs,
+    required this.correctionRepo,
+    required this.customDictionaryRepo,
+    required this.draftRepo,
+    required this.modelPackRepo,
+    required this.personalStyleRepo,
+    required this.onboardingCompleted,
+  });
+
+  final SharedPreferences prefs;
+  final CorrectionRepository correctionRepo;
+  final CustomDictionaryRepository customDictionaryRepo;
+  final DraftRepository draftRepo;
+  final ModelPackRepository modelPackRepo;
+  final PersonalStyleRepository personalStyleRepo;
+  final bool onboardingCompleted;
 
   @override
-  State<App> createState() => _AppState();
+  State<GrammarFixApp> createState() => _GrammarFixAppState();
 }
 
-class _AppState extends State<App> with WidgetsBindingObserver {
+class _GrammarFixAppState extends State<GrammarFixApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -93,80 +149,60 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      unawaited(AdService.instance.showAppOpenAdIfAvailable());
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // All app-level cubits live ABOVE MaterialApp so pushed routes
-    // (settings, feedback, paywall) can read them.
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider<AuthCubit>(
-          create: (context) => SupabaseAuthRepo(
-            Supabase.instance.client,
-          ).let((repo) => AuthCubit(authRepo: repo)..checkAuth()),
-        ),
-        BlocProvider<SubscriptionCubit>(
-          create: (context) => SubscriptionCubit(
-            forcePro: AppConfig.forcePro,
-          ),
-        ),
-        BlocProvider<OfferingsCubit>(
-          create: (context) => OfferingsCubit(),
-        ),
+        RepositoryProvider<CorrectionRepository>.value(value: widget.correctionRepo),
+        RepositoryProvider<CustomDictionaryRepository>.value(value: widget.customDictionaryRepo),
+        RepositoryProvider<DraftRepository>.value(value: widget.draftRepo),
+        RepositoryProvider<ModelPackRepository>.value(value: widget.modelPackRepo),
+        RepositoryProvider<PersonalStyleRepository>.value(value: widget.personalStyleRepo),
       ],
-      child: MaterialApp(
-        navigatorKey: appNavigatorKey,
-        debugShowCheckedModeBanner: false,
-        title: AppConfig.appName,
-        theme: lightMode,
-        darkTheme: darkMode,
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: BlocListener<SubscriptionCubit, SubscriptionState>(
-          listener: (context, state) {
-            if (state is SubscriptionLoaded) {
-              AdService.instance.setProStatus(state.isPro);
-            }
-          },
-          child: BlocConsumer<AuthCubit, AuthState>(
-            builder: (context, state) {
-              if (state is AuthLoading || state is AuthInitial) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (state is Unauthenticated) {
-                return const AuthPage();
-              }
-              return const MainShell();
-            },
-            listener: (context, state) {
-              if (state is AuthError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
-                );
-              }
-              if (state is Authenticated) {
-                context.read<SubscriptionCubit>().checkProStatus();
-              }
-            },
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<CorrectionCubit>(
+            create: (context) => CorrectionCubit(
+              repository: widget.correctionRepo,
+              modelPackRepository: widget.modelPackRepo,
+              draftRepository: widget.draftRepo,
+              personalStyleRepository: widget.personalStyleRepo,
+            ),
           ),
+          BlocProvider<ModelPackCubit>(
+            create: (context) => ModelPackCubit(
+              repository: widget.modelPackRepo,
+            ),
+          ),
+          BlocProvider<CustomDictionaryCubit>(
+            create: (context) => CustomDictionaryCubit(
+              repository: widget.customDictionaryRepo,
+            ),
+          ),
+          BlocProvider<SubscriptionCubit>(
+            create: (context) => SubscriptionCubit(
+              forcePro: AppConfig.forcePro,
+            ),
+          ),
+          BlocProvider<OfferingsCubit>(
+            create: (context) => OfferingsCubit(),
+          ),
+        ],
+        child: MaterialApp(
+          title: AppConfig.appName,
+          theme: lightMode,
+          darkTheme: darkMode,
+          themeMode: ThemeMode.system,
+          debugShowCheckedModeBanner: false,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: widget.onboardingCompleted ? const MainShell() : const OnboardingPage(),
         ),
       ),
     );
   }
-}
-
-extension _Let<T> on T {
-  R let<R>(R Function(T value) transform) => transform(this);
 }

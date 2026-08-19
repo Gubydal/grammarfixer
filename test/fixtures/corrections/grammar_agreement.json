@@ -1,0 +1,52 @@
+[
+  {
+    "id": "gram_agr_01",
+    "input": "The dogs is outside in the yard.",
+    "language": "en",
+    "required_edits": [
+      { "original": "The dogs is", "replacement": "The dogs are" }
+    ],
+    "forbidden_edits": ["outside", "yard"],
+    "category": "agreement"
+  },
+  {
+    "id": "gram_tense_02",
+    "input": "I have went there before.",
+    "language": "en",
+    "required_edits": [
+      { "original": "have went", "replacement": "have gone" }
+    ],
+    "forbidden_edits": ["before"],
+    "category": "tense"
+  },
+  {
+    "id": "gram_modal_03",
+    "input": "She will came tomorrow.",
+    "language": "en",
+    "required_edits": [
+      { "original": "will came", "replacement": "will come" }
+    ],
+    "forbidden_edits": ["tomorrow"],
+    "category": "tense"
+  },
+  {
+    "id": "gram_article_04",
+    "input": "He is engineer at a software company.",
+    "language": "en",
+    "required_edits": [
+      { "original": "is engineer", "replacement": "is an engineer" }
+    ],
+    "forbidden_edits": ["software", "company"],
+    "category": "grammar"
+  },
+  {
+    "id": "gram_first_person_05",
+    "input": "I has two cats.",
+    "language": "en",
+    "required_edits": [
+      { "original": "I has", "replacement": "I have" }
+    ],
+    "forbidden_edits": ["cats"],
+    "category": "agreement"
+  }
+]

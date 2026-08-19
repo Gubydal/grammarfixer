@@ -1,0 +1,37 @@
+[
+  {
+    "id": "es_agr_01",
+    "input": "Los niño juegan en el parque.",
+    "acceptedOutputs": ["Los niños juegan en el parque."],
+    "category": "number agreement",
+    "notes": "Plural noun agreement"
+  },
+  {
+    "id": "es_gend_01",
+    "input": "La problema es difícil de resolver.",
+    "acceptedOutputs": ["El problema es difícil de resolver."],
+    "category": "gender agreement",
+    "notes": "Masculine noun ending in -ma"
+  },
+  {
+    "id": "es_verb_01",
+    "input": "Ellas es muy amables.",
+    "acceptedOutputs": ["Ellas son muy amables."],
+    "category": "verb agreement",
+    "notes": "Plural verb agreement"
+  },
+  {
+    "id": "es_accent_01",
+    "input": "Yo tambien quiero ir al cine.",
+    "acceptedOutputs": ["Yo también quiero ir al cine."],
+    "category": "accent",
+    "notes": "Tilde on también"
+  },
+  {
+    "id": "es_clean_01",
+    "input": "El perro corre rápidamente por el jardín.",
+    "acceptedOutputs": ["El perro corre rápidamente por el jardín."],
+    "category": "already correct",
+    "notes": "Preserve already correct Spanish"
+  }
+]

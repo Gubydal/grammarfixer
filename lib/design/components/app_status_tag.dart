@@ -13,7 +13,7 @@ class AppStatusTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (background, foreground) = switch (status) {
-      AppStatus.done => (AppColors.primaryContainer, AppColors.primaryDark),
+      AppStatus.done => (AppColors.primarySoft, AppColors.primary),
       AppStatus.inProgress => (
         const Color(0xFFFFE9E1),
         AppColors.warning,

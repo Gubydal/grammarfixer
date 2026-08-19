@@ -1,0 +1,30 @@
+[
+  {
+    "id": "de_art_01",
+    "input": "Das Hund läuft im Garten.",
+    "acceptedOutputs": ["Der Hund läuft im Garten."],
+    "category": "article/gender",
+    "notes": "Masculine noun article"
+  },
+  {
+    "id": "de_art_02",
+    "input": "Die Haus ist sehr groß.",
+    "acceptedOutputs": ["Das Haus ist sehr groß."],
+    "category": "article/gender",
+    "notes": "Neuter noun article"
+  },
+  {
+    "id": "de_verb_01",
+    "input": "Er gehen heute nach Hause.",
+    "acceptedOutputs": ["Er geht heute nach Hause."],
+    "category": "verb form",
+    "notes": "Third-person singular verb conjugation"
+  },
+  {
+    "id": "de_clean_01",
+    "input": "Guten Morgen und einen schönen Tag.",
+    "acceptedOutputs": ["Guten Morgen und einen schönen Tag."],
+    "category": "already correct",
+    "notes": "Preserve already correct German"
+  }
+]

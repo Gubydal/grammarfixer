@@ -1,31 +1,32 @@
-# Account Deletion (Template Placeholder)
+# Data Deletion & Privacy Controls — GrammarFix
 
-_Last updated: <set per app>_
+**Application**: GrammarFix (`com.mogate.grammarfix`)  
+**Publisher**: Mogate (`mogatebusiness@gmail.com`)
 
-> Placeholder for the external deletion page published at
-> `https://<slug>.mogate.tech/delete-account`. The template links to this
-> URL from Settings; the page itself is a website task, not part of the app.
+---
 
-## App supports deletion inside the app: Yes
+## 1. Zero Remote Account Data
 
-In-app deletion steps:
+Because GrammarFix operates as a **Guest-First, local-only application**, no user accounts, passwords, or personal credentials are created or stored on remote servers.
 
-1. Open the app.
-2. Open Settings.
-3. Choose Delete Account.
-4. Confirm deletion.
+---
 
-What will be deleted:
+## 2. Deleting On-Device Local Data
 
-- Account profile and email
-- Feedback you submitted
-- Supabase authentication record
-- Any app-specific rows added to the deletion function
+You can immediately and irreversibly delete all local app data from your device at any time:
 
-What may be retained:
+1. **Within the App**:
+   - Open **Settings** > **Custom Dictionary** > Tap the **Trash** icon to clear all custom words.
+   - Toggle **Save Editor Draft Locally** to **Off**.
+2. **Via Android Settings**:
+   - Open Android **Settings** > **Apps** > **GrammarFix**.
+   - Tap **Storage & Cache** > **Clear Storage** / **Clear Data**.
+   - All local preferences, custom dictionaries, and downloaded offline model packs will be permanently purged.
 
-- Google Play purchase receipts and transaction records, governed by
-  Google's terms and retention policy.
-- Temporary copies in backups, purged according to the backup retention
-  cycle.
-- Records the app is legally required to keep.
+---
+
+## 3. Support Inquiries
+
+For data deletion inquiries or requests:
+Email: `mogatebusiness@gmail.com`
+Subject: `[GrammarFix] Data Deletion Inquiry`

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="com.mogate.grammarfix.MainActivity">
+    <subtype
+        android:label="English (GrammarFix)"
+        android:imeSubtypeLocale="en_US"
+        android:imeSubtypeMode="keyboard" />
+    <subtype
+        android:label="Arabic (GrammarFix)"
+        android:imeSubtypeLocale="ar"
+        android:imeSubtypeMode="keyboard" />
+</input-method>

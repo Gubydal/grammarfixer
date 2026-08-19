@@ -1,0 +1,44 @@
+[
+  {
+    "id": "ar_agr_01",
+    "input": "هذه كتاب جميل",
+    "acceptedOutputs": ["هذا كتاب جميل"],
+    "category": "gender agreement",
+    "notes": "Masculine noun with masculine demonstrative pronoun"
+  },
+  {
+    "id": "ar_agr_02",
+    "input": "هذا سيارة سريعة",
+    "acceptedOutputs": ["هذه سيارة سريعة"],
+    "category": "gender agreement",
+    "notes": "Feminine noun with feminine demonstrative pronoun"
+  },
+  {
+    "id": "ar_plur_01",
+    "input": "الطلاب يكتب الدرس",
+    "acceptedOutputs": ["الطلاب يكتبون الدرس"],
+    "category": "number agreement",
+    "notes": "Plural subject-verb agreement"
+  },
+  {
+    "id": "ar_spell_01",
+    "input": "ان شاء الله سنلتقي غدا",
+    "acceptedOutputs": ["إن شاء الله سنلتقي غدا", "إن شاء الله سنلتقي غداً"],
+    "category": "spelling",
+    "notes": "Hamza correction"
+  },
+  {
+    "id": "ar_spell_02",
+    "input": "هذه مسؤلية الجميع",
+    "acceptedOutputs": ["هذه مسؤولية الجميع"],
+    "category": "spelling",
+    "notes": "Medial hamza spelling"
+  },
+  {
+    "id": "ar_clean_01",
+    "input": "القراءة تغذي العقل والروح.",
+    "acceptedOutputs": ["القراءة تغذي العقل والروح."],
+    "category": "already correct",
+    "notes": "Preserve already correct Arabic sentences"
+  }
+]

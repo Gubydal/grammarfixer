@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GrammarFix GEC Fixture & Dataset Schema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "input", "acceptedOutputs", "category"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique identifier for the GEC test case"
+      },
+      "input": {
+        "type": "string",
+        "description": "Source uncorrected text"
+      },
+      "acceptedOutputs": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "List of valid, acceptable ground-truth corrected strings"
+      },
+      "category": {
+        "type": "string",
+        "enum": ["grammar", "spelling", "punctuation", "agreement", "gender agreement", "number agreement", "verb form", "verb agreement", "article", "accent", "elision/apostrophe", "already correct"]
+      },
+      "notes": {
+        "type": "string",
+        "description": "Linguistic or dialect note"
+      }
+    }
+  }
+}

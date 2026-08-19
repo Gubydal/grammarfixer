@@ -1,0 +1,40 @@
+[
+  {
+    "id": "multi_ar_agr_01",
+    "input": "هذه كتاب جميل قرأته اليوم.",
+    "language": "ar",
+    "required_edits": [
+      { "original": "هذه كتاب", "replacement": "هذا كتاب" }
+    ],
+    "forbidden_edits": ["جميل", "قرأته", "اليوم"],
+    "category": "agreement"
+  },
+  {
+    "id": "multi_code_switch_02",
+    "input": "I'll call Ahmed بكرة in the morning.",
+    "language": "en",
+    "required_edits": [],
+    "forbidden_edits": ["Ahmed", "بكرة"],
+    "category": "code_switching"
+  },
+  {
+    "id": "multi_fr_agr_03",
+    "input": "Les chat sont dans le jardin.",
+    "language": "fr",
+    "required_edits": [
+      { "original": "Les chat sont", "replacement": "Les chats sont" }
+    ],
+    "forbidden_edits": ["jardin"],
+    "category": "agreement"
+  },
+  {
+    "id": "multi_es_agr_04",
+    "input": "Los niño juegan en el parque.",
+    "language": "es",
+    "required_edits": [
+      { "original": "Los niño", "replacement": "Los niños" }
+    ],
+    "forbidden_edits": ["juegan", "parque"],
+    "category": "agreement"
+  }
+]

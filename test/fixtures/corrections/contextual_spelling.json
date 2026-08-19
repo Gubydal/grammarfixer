@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ctx_homophone_01",
+    "input": "Their going home right now.",
+    "language": "en",
+    "required_edits": [
+      { "original": "Their going", "replacement": "They're going" }
+    ],
+    "forbidden_edits": ["home"],
+    "category": "word_choice"
+  },
+  {
+    "id": "ctx_homophone_02",
+    "input": "I know your right about this.",
+    "language": "en",
+    "required_edits": [
+      { "original": "your right", "replacement": "you're right" }
+    ],
+    "forbidden_edits": ["know"],
+    "category": "word_choice"
+  },
+  {
+    "id": "ctx_comparative_03",
+    "input": "This solution is better then that one.",
+    "language": "en",
+    "required_edits": [
+      { "original": "better then", "replacement": "better than" }
+    ],
+    "forbidden_edits": ["solution"],
+    "category": "word_choice"
+  }
+]

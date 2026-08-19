@@ -1,0 +1,51 @@
+[
+  {
+    "id": "en_agr_01",
+    "input": "He don't know the answer.",
+    "acceptedOutputs": ["He doesn't know the answer."],
+    "category": "agreement",
+    "notes": "Third-person singular doesn't"
+  },
+  {
+    "id": "en_agr_02",
+    "input": "They is coming over tonight.",
+    "acceptedOutputs": ["They are coming over tonight."],
+    "category": "agreement",
+    "notes": "Plural verb agreement"
+  },
+  {
+    "id": "en_art_01",
+    "input": "I ate a apple this morning.",
+    "acceptedOutputs": ["I ate an apple this morning."],
+    "category": "article",
+    "notes": "Indefinite article before vowel"
+  },
+  {
+    "id": "en_spell_01",
+    "input": "I recieved your message yesterday.",
+    "acceptedOutputs": ["I received your message yesterday."],
+    "category": "spelling",
+    "notes": "Common receive typo"
+  },
+  {
+    "id": "en_spell_02",
+    "input": "We need to keep them seperate.",
+    "acceptedOutputs": ["We need to keep them separate."],
+    "category": "spelling",
+    "notes": "Common separate typo"
+  },
+  {
+    "id": "en_verb_01",
+    "input": "You should of called me.",
+    "acceptedOutputs": ["You should have called me."],
+    "category": "verb form",
+    "notes": "Should of -> should have"
+  },
+  {
+    "id": "en_clean_01",
+    "input": "The weather is very pleasant today.",
+    "acceptedOutputs": ["The weather is very pleasant today."],
+    "category": "already correct",
+    "notes": "Clean sentence should not be mutated"
+  }
+]
